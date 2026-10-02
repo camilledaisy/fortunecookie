@@ -31,18 +31,18 @@
     overflow-x: hidden;
   }
 
-  /* Everything lives on one stage measured in "bag units": the SVG viewBox is
-     400×720, so 1 unit = .25cqw. */
+  /* Everything lives on one 400×640 stage measured in "units": 1 unit = .25cqw.
+     The bag photo sits at x 70–330, y 110–596; its open front edge is y 159. */
   .scene {
     position: relative;
-    width: min(94vw, 430px, calc((100svh - 24px) * .5556));
-    aspect-ratio: 400 / 720;
+    width: min(94vw, 430px, calc((100svh - 24px) * .625));
+    aspect-ratio: 400 / 640;
     container-type: size;
   }
 
   /* ---------- the bag ---------- */
-  .bag { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 95%; }
-  .scene.front .bag { opacity: .1; }
+  .bag { position: absolute; inset: 0; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 93%; }
+  .scene.front .bag { opacity: .12; }
   .scene.wiggle .bag { animation: wiggle .35s ease-in-out; }
   @keyframes wiggle {
     0%, 100% { transform: none; }
@@ -51,26 +51,40 @@
   }
   .hit-bag:hover ~ .bag { transform: translateY(-.6cqw); }
 
-  .roll, .flap, .back { transform-box: fill-box; transform-origin: 50% 100%; }
-  .roll { transition: transform .35s ease-in, opacity .35s ease-in; }
-  .flap, .back { transform: scaleY(0); opacity: 0; transition: transform .55s cubic-bezier(.3,1.3,.5,1) .25s, opacity .2s ease .25s; }
-  .scene.opened .roll { transform: scaleY(.1); opacity: 0; }
-  .scene.opened .flap, .scene.opened .back { transform: none; opacity: 1; }
+  .bag img { position: absolute; left: 17.5%; width: 65%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
+  .bag .front-img { top: 24.875%; }
+  .bag .band { top: 17.19%; z-index: 1; transform-origin: 50% 100%; transition: transform .6s ease-in, opacity .3s ease .3s; }
+  .scene.opened .band { transform: perspective(300px) rotateX(75deg) translateY(-10%); opacity: 0; }
+
+  /* the inside back wall, seen once the fold is lifted */
+  .bag .inside {
+    position: absolute; left: 19%; width: 62%; top: 23.2%; height: 2.6%;
+    background: radial-gradient(60% 120% at 50% 100%, #5c4f40, #8f816d 55%, #e6e1d8 100%);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    transform: scaleY(0); transform-origin: 50% 100%;
+    transition: transform .5s cubic-bezier(.3,1.3,.5,1) .35s;
+  }
+  .scene.opened .inside { transform: none; }
+  .bag .ground {
+    position: absolute; left: 18%; width: 64%; top: 91.6%; height: 3%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(70, 50, 30, .35), rgba(70, 50, 30, 0));
+  }
 
   /* ---------- the cookie ---------- */
-  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 0 79.7% 0); }   /* hidden below the bag's front edge */
+  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 0 75.12% 0); }   /* hidden below the bag's front edge */
   .scene.front .mouth { clip-path: none; }
 
   .cookie {
-    --cy: 290; --s: .75;
+    --cy: 270; --s: .75;
     position: absolute; left: 0; top: 0;
     width: 60cqw; aspect-ratio: 260 / 200;
     transform: translate(calc(200 * .25cqw - 30cqw), calc(var(--cy) * .25cqw - 23.08cqw)) scale(var(--s));
     transition: transform .9s cubic-bezier(.35,.1,.25,1), opacity .5s ease;
     will-change: transform;
   }
-  .scene.out .cookie   { --cy: 76; }
-  .scene.front .cookie { --cy: 250; --s: 1.15; }
+  .scene.out .cookie   { --cy: 89; }
+  .scene.front .cookie { --cy: 215; --s: 1.15; }
   .scene.leaving .cookie { opacity: 0; }
 
   .body { position: absolute; inset: 0; }
@@ -105,7 +119,7 @@
   .slip {
     position: absolute;
     left: 6%; width: 88%;
-    top: 36.2%;
+    top: 35.25%;
     padding: 4.6cqw 5cqw 3.6cqw 8cqw;
     background: #fbfaf5 var(--foxing);
     color: var(--ink-blue);
@@ -136,7 +150,7 @@
   .keep { margin-top: 1.6cqw; font-size: 3cqw; }
 
   .scene.cracked .slip {
-    top: 51.7%;
+    top: 52.7%;
     opacity: 1;
     clip-path: inset(0 0 0 0);
     transform: rotate(-1.2deg);
@@ -148,7 +162,7 @@
 
   /* ---------- buttons ---------- */
   .actions {
-    position: absolute; left: 0; right: 0; top: 77%;
+    position: absolute; left: 0; right: 0; top: 75%;
     display: flex; flex-direction: column; align-items: center; gap: 1.5cqw;
     opacity: 0; visibility: hidden;
     transition: opacity 1.2s ease, visibility 0s 1.2s;
@@ -165,10 +179,10 @@
   /* invisible tap targets over the bag and the cookie */
   .hit { position: absolute; border: 0; padding: 0; background: none; cursor: pointer; z-index: 4; }
   .hit[hidden] { display: none; }
-  .hit-bag    { left: 17%; width: 66%; top: 24%; height: 72%; }
-  .hit-cookie { left: 14%; width: 72%; top: 19%; height: 31%; }
+  .hit-bag    { left: 17.5%; width: 65%; top: 17%; height: 77%; }
+  .hit-cookie { left: 14%; width: 72%; top: 17%; height: 33%; }
 
-  .hint { position: absolute; left: 0; right: 0; top: 96.6%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
+  .hint { position: absolute; left: 0; right: 0; top: 95.2%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
   .hint.gone { opacity: 0; }
 
   .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .msg,
@@ -200,13 +214,6 @@
     </filter>
     <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
     <filter id="soft2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
-    <filter id="paperTex" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="n"/>
-      <feDiffuseLighting in="n" surfaceScale=".22" lighting-color="#fff" result="l"><feDistantLight azimuth="225" elevation="70"/></feDiffuseLighting>
-      <feComposite in="SourceGraphic" in2="l" operator="arithmetic" k1="1.05"/>
-    </filter>
-    <filter id="shadow" x="-30%" y="-200%" width="160%" height="500%"><feGaussianBlur stdDeviation="7"/></filter>
-
     <linearGradient id="cookieBase" x1="0" y1="0" x2=".3" y2="1">
       <stop offset="0" stop-color="#f0c98e"/>
       <stop offset=".5" stop-color="#e5b06d"/>
@@ -216,26 +223,6 @@
       <stop offset="0" stop-color="#fff0cc" stop-opacity=".75"/>
       <stop offset="1" stop-color="#fff0cc" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="paperShade" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e4ddce"/>
-      <stop offset=".18" stop-color="#f5f2ea"/>
-      <stop offset=".6" stop-color="#fbf9f4"/>
-      <stop offset="1" stop-color="#e8e1d3"/>
-    </linearGradient>
-    <linearGradient id="backWall" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ebe4d6"/>
-      <stop offset=".25" stop-color="#9d8b70"/>
-      <stop offset="1" stop-color="#6e5d47"/>
-    </linearGradient>
-    <linearGradient id="kraft" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d9ccb7"/>
-      <stop offset=".6" stop-color="#c8b8a0"/>
-      <stop offset="1" stop-color="#b09e84"/>
-    </linearGradient>
-    <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-      <circle cx="2" cy="2" r="1.3" fill="#e7a03b" opacity=".75"/>
-    </pattern>
-
     <!-- cookie halves, in cookie space (viewBox -130 -100 260 200) -->
     <path id="shapeL" d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60 C2 -30 2 0 8 26 C-20 40 -70 56 -108 72 Z"/>
     <path id="shapeR" d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68 C80 52 36 38 8 26 C2 0 2 -30 6 -60 Z"/>
@@ -248,85 +235,12 @@
   <button class="hit hit-bag" id="hitBag" type="button" aria-label="Take a fortune cookie from the bag"></button>
   <button class="hit hit-cookie" id="hitCookie" type="button" aria-label="Crack the cookie open" hidden></button>
 
-  <svg class="bag" viewBox="0 0 400 720" aria-hidden="true">
-    <ellipse cx="200" cy="692" rx="150" ry="11" fill="#5d452b" opacity=".3" filter="url(#shadow)"/>
-
-    <!-- inside of the bag, seen once the top is unrolled -->
-    <path class="back" d="M84 214 L86 130 C140 125 260 125 314 130 L316 214 Z" fill="url(#backWall)"/>
-
-    <path d="M80 204 C79 380 78 540 76 684 C150 690 250 690 324 684 C322 540 321 380 320 204 Z" fill="url(#paperShade)" filter="url(#paperTex)"/>
-    <g fill="none" stroke-linecap="round">
-      <path d="M95 212 L93 676" stroke="#d6cebe" stroke-width="1.4"/>
-      <path d="M305 212 L307 676" stroke="#d6cebe" stroke-width="1.4"/>
-      <path d="M78 664 C150 668 250 668 322 664" stroke="#ddd5c6" stroke-width="1.4"/>
-      <path d="M140 236 C150 300 146 380 152 430" stroke="#e7e1d5" stroke-width="2"/>
-      <path d="M262 226 C256 280 266 340 258 392" stroke="#ece6db" stroke-width="2"/>
-    </g>
-
-    <!-- unrolled front flap -->
-    <g class="flap">
-      <path d="M80 214 L80 147 C110 142 130 150 160 145 C190 141 215 150 245 144 C275 140 300 147 320 145 L320 214 Z" fill="url(#paperShade)"/>
-      <path d="M80 147 C110 142 130 150 160 145 C190 141 215 150 245 144 C275 140 300 147 320 145" fill="none" stroke="#d2c9b8" stroke-width="1.2"/>
-      <path d="M120 150 L124 206 M205 148 L200 210 M270 146 L274 204" stroke="#e6dfd2" stroke-width="1.6" fill="none"/>
-      <path d="M80 210 C150 214 250 214 320 210" stroke="#dcd3c3" stroke-width="2" fill="none"/>
-    </g>
-
-    <!-- crumples under the fold -->
-    <g fill="none" stroke-linecap="round">
-      <path d="M84 238 C110 250 128 262 150 300" stroke="#e2dccf" stroke-width="2.4"/>
-      <path d="M96 236 C120 244 146 250 176 262" stroke="#ebe6dc" stroke-width="2"/>
-      <path d="M300 238 C288 252 284 266 286 290" stroke="#e6e0d4" stroke-width="2"/>
-    </g>
-
-    <!-- folded-down top -->
-    <g class="roll">
-      <path d="M76 176 C150 172 250 172 324 176 L325 192 L75 192 Z" fill="#f6f4ef"/>
-      <path d="M76 176 C150 172 250 172 324 176" fill="none" stroke="#dcd6ca" stroke-width="1"/>
-      <path d="M70 186 C150 182 250 183 330 186 L331 232 C250 236 150 235 69 232 Z" fill="url(#kraft)"/>
-      <path d="M72 190 C150 186 250 187 328 190" stroke="#e4d9c6" stroke-width="2" fill="none" opacity=".9"/>
-      <path d="M70 230 C150 233 250 234 330 230" stroke="#9a8a70" stroke-width="1.4" fill="none" opacity=".7"/>
-      <path d="M118 188 L114 232 M236 186 L240 233" stroke="#b5a48a" stroke-width="1" fill="none" opacity=".5"/>
-      <path d="M69 234 C150 240 250 240 331 234" stroke="#6e5d47" stroke-width="3" fill="none" opacity=".14" filter="url(#soft2)"/>
-    </g>
-
-    <!-- the printed label -->
-    <g font-family="Montserrat, Gotham, 'Helvetica Neue', Arial, sans-serif" text-anchor="middle" fill="#df5a4e">
-      <rect x="82" y="324" width="232" height="338" rx="7" fill="#df5a4e"/>
-      <rect x="103" y="327" width="190" height="332" fill="#f8f6f1"/>
-      <path d="M110 327 V659 M286 327 V659" stroke="#df5a4e" stroke-width="1.6"/>
-
-      <!-- round seal -->
-      <g transform="translate(198 366)">
-        <circle r="21" fill="none" stroke="#df5a4e" stroke-width="1.6"/>
-        <circle r="13" fill="none" stroke="#df5a4e" stroke-width="1"/>
-        <path id="sealTop" d="M-16.5 0 A16.5 16.5 0 0 1 16.5 0" fill="none"/>
-        <path id="sealBot" d="M-16.5 0 A16.5 16.5 0 0 0 16.5 0" fill="none"/>
-        <text font-size="3.7" font-weight="600" letter-spacing=".25"><textPath href="#sealTop" startOffset="50%">SOMETHING SMALL</textPath></text>
-        <text font-size="3.7" font-weight="600" letter-spacing=".25" dy="3.4"><textPath href="#sealBot" startOffset="50%">JUST FOR YOU</textPath></text>
-<path d="M0 5 C-7 0 -7 -5 -3.5 -5.5 C-1.5 -5.8 0 -4 0 -3 C0 -4 1.5 -5.8 3.5 -5.5 C7 -5 7 0 0 5 Z" fill="#df5a4e"/>
-      </g>
-
-      <text x="198" y="429" font-size="29.5" font-weight="500" letter-spacing=".4">FORTUNE</text>
-      <text x="198" y="464" font-size="29.5" font-weight="500" letter-spacing=".4">COOKIES</text>
-      <path d="M118 481 H186 M210 481 H278 M186 481 V475 H210 V481 M190 475 V486 M206 475 V486 M194 486 H202" fill="none" stroke="#df5a4e" stroke-width="1.4"/>
-
-      <!-- the yellow cookie with its paper tab -->
-      <g transform="translate(134 494) scale(.62)" stroke="#e7a03b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-        <path d="M2 128 L36 108 L56 150 L22 170 Z" fill="#fbfaf6"/>
-        <rect x="18" y="128" width="19" height="19" fill="none" stroke="#df5a4e" stroke-width="2.2" transform="rotate(-30 27.5 137.5)"/>
-        <text x="27.5" y="143" font-size="14" fill="#df5a4e" stroke="none" font-family="serif" text-anchor="middle" transform="rotate(-30 27.5 137.5)">福</text>
-        <path d="M10 92 C8 50 48 18 104 12 C140 8 168 14 184 26 C200 30 210 46 206 62 C204 86 190 112 166 136 C130 148 70 146 36 132 C18 124 10 110 10 92 Z" fill="#f6e396"/>
-        <path d="M14 106 C50 124 112 132 166 128 C150 140 120 146 80 144 C50 140 24 128 14 106 Z" fill="url(#dots)" stroke="none"/>
-        <path d="M14 106 C50 124 112 132 166 128" fill="none" stroke-width="3"/>
-        <path d="M178 22 C164 42 166 68 198 90" fill="none"/>
-      </g>
-
-      <text x="198" y="627" font-size="22" font-weight="600">8<tspan font-size="11" dy="-9">*</tspan></text>
-      <text x="198" y="641" font-size="10" font-weight="600" letter-spacing=".4">COOKIES</text>
-      <text x="198" y="652" font-size="7" font-weight="500" letter-spacing=".4">NET WT 2.3 OUNCES</text>
-    </g>
-    <text x="200" y="680" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="6.4" fill="#b5ab9b" letter-spacing=".3">*one at a time. there's no hurry.</text>
-  </svg>
+  <div class="bag" aria-hidden="true">
+    <span class="ground"></span>
+    <span class="inside"></span>
+    <img class="front-img" src="img/bag-body.png" alt="" width="412" height="692">
+    <img class="band" src="img/bag-top.png" alt="" width="412" height="78">
+  </div>
 
   <div class="mouth">
     <div class="cookie" id="cookie">
