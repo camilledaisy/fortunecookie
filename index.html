@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fortune Cookie</title>
+<meta name="description" content="something small, just for you.">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<!-- link preview when the page is shared (needs the absolute address it's published at) -->
+<meta property="og:title" content="Fortune Cookies">
+<meta property="og:description" content="something small, just for you.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://camilledaisy.github.io/fortunecookie/">
+<meta property="og:image" content="https://camilledaisy.github.io/fortunecookie/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f1ece3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #df5a4e;
+    --ink-blue: #2f55c2;
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+    --foxing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.3' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .78 0 0 0 0 .5 0 0 0 0 .34 13 0 0 0 -9.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+    background: #f1ece3 var(--noise);
+    color: #5a4636;
+    font-family: "Montserrat", "Gotham", "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+
+  /* Everything lives on one 400×640 stage measured in "units": 1 unit = .25cqw.
+     The bag photo sits at x 70–330, y 110–596; its open front edge is y 159. */
+  .scene {
+    position: relative;
+    width: min(94vw, 430px, calc((100svh - 24px) * .625));
+    aspect-ratio: 400 / 640;
+    container-type: size;
+  }
+
+  /* ---------- the bag ---------- */
+  .bag { position: absolute; inset: 0; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 93%; }
+  .scene.front .bag { opacity: .12; }
+  .scene.shake .bag { animation: shake .75s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes shake {
+    0%, 100% { transform: none; }
+    10% { transform: translate(-2.5cqw, -.6cqw) rotate(-7deg); }
+    22% { transform: translate(2.8cqw, -1.2cqw) rotate(8deg); }
+    34% { transform: translate(-2.6cqw, -.4cqw) rotate(-7deg); }
+    46% { transform: translate(2.2cqw, -1cqw) rotate(6deg); }
+    58% { transform: translate(-1.6cqw, 0) rotate(-4deg); }
+    70% { transform: translate(1.2cqw, -.4cqw) rotate(3deg); }
+    82% { transform: translate(-.6cqw, 0) rotate(-1.5deg); }
+  }
+  .hit-bag:hover ~ .bag { transform: translateY(-.6cqw); }
+
+  .bag img { position: absolute; left: 17.5%; width: 65%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
+  .bag .front-img { top: 24.875%; }
+  .bag .band { top: 17.19%; z-index: 1; }
+  /* my own seal, printed where the brand logo was */
+  .bag .seal {
+    position: absolute; left: 49.21%; top: 43.71%; width: 13.6%;
+    transform: translate(-50%, -50%) rotate(-1.5deg);
+    opacity: .88;   /* plain colour, no blend or blur: Safari draws a hard box edge around those */
+  }
+  .bag .ground {
+    position: absolute; left: 18%; width: 64%; top: 91.6%; height: 3%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(70, 50, 30, .35), rgba(70, 50, 30, 0));
+  }
+
+  /* ---------- the cookie ---------- */
+  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(-60% -60% 82.5% -60%); }   /* hidden below the top of the bag; open above and to the sides */
+  .scene.front .mouth { clip-path: none; }
+
+  .cookie {
+    --cy: 270; --s: .7; --r: 0deg;
+    position: absolute; left: 0; top: 0;
+    width: 52cqw; aspect-ratio: 301 / 293;
+    transform: translate(calc(200 * .25cqw - 26cqw), calc(var(--cy) * .25cqw - 25.31cqw)) scale(var(--s)) rotate(var(--r));
+    transition: transform .9s cubic-bezier(.35,.1,.25,1), opacity .5s ease;
+    will-change: transform;
+  }
+  .scene.out .cookie   { --cy: 50; --r: -14deg; transition: transform .45s cubic-bezier(.2,1.5,.45,1); }
+  .scene.front .cookie { --cy: 205; --s: 1.15; --r: 0deg; transition: transform .8s cubic-bezier(.3,1.25,.5,1), opacity .5s ease; }
+  .scene.leaving .cookie { opacity: 0; }
+
+  .body { position: absolute; inset: 0; }
+  .scene.pressing .body { animation: press .35s ease-in-out; }
+  @keyframes press {
+    30% { transform: scale(.97, .94) rotate(.8deg); }
+    55% { transform: scale(.96, .93) rotate(-1deg); }
+    80% { transform: scale(.985, .97) rotate(.4deg); }
+  }
+
+  .body { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(70, 45, 20, .22)); }
+  .whole, .half { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+  .whole { z-index: 3; }
+  .scene.cracked .whole { opacity: 0; }
+  /* the front half (with its curled bottom) and the back half it snaps off from */
+  .half { opacity: 0; transition: transform .7s cubic-bezier(.3,1.3,.5,1); will-change: transform; }
+  .scene.cracked .half { opacity: 1; }
+  .l { z-index: 3; transform-origin: 40% 90%; }
+  .r { z-index: 1; transform-origin: 70% 75%; }
+  .scene.cracked .l { transform: translate(-14%, 4%) rotate(-12deg); }
+  .scene.cracked .r { transform: translate(14%, -2%) rotate(13deg); }
+
+  .crumb {
+    position: absolute; left: 47%; top: 58%;
+    width: 1.6cqw; height: 1.3cqw;
+    background: #d9a055;
+    border-radius: 45% 60% 40% 55%;
+    opacity: 0;
+    z-index: 4;
+  }
+  .scene.cracked .crumb { animation: crumb 1.1s ease-in forwards; animation-delay: var(--d, 0s); }
+  @keyframes crumb {
+    0%   { opacity: 1; transform: translate(0, 0) scale(var(--z, 1)); }
+    100% { opacity: 0; transform: translate(var(--x), 22cqw) rotate(120deg) scale(var(--z, 1)); }
+  }
+
+  /* ---------- the slip ----------
+     It lives inside the cookie (so it can sit in the crack between the halves) and is
+     laid out in cookie-box units: it starts folded in the fold, gets pulled out while
+     swinging flat, comes to rest below the cookie, then opens along its fold. */
+  .slip {
+    position: absolute;
+    left: -23.6%; width: 147.1%; top: 106.8%;
+    display: flex;
+    perspective: 120cqw;
+    color: var(--ink-blue);
+    font-family: Arial, "Helvetica Neue", Helvetica, Arimo, sans-serif;
+    text-align: center;
+    z-index: 2;
+    opacity: 0;
+  }
+  .panel { position: relative; width: 50%; overflow: hidden; background: #fbfaf5 var(--foxing); box-shadow: 0 .3cqw .7cqw rgba(80, 60, 40, .2); }
+  .face { width: 200%; padding: 4cqw 4.3cqw 3.1cqw 7cqw; }
+  .pr .face { margin-left: -100%; }
+  .pr { box-shadow: 0 .3cqw .7cqw rgba(80, 60, 40, .2), inset 1px 0 0 rgba(90, 70, 50, .14); }
+  .pl { transform-origin: 100% 50%; }
+  /* the printed blue marks on the left edge */
+  .pl::before, .pl::after { content: ""; position: absolute; left: 0; width: 18%; background: #2c55cf; opacity: .9; z-index: 1; }
+  .pl::before { top: 9%; height: 13%; }
+  .pl::after  { bottom: 7%; height: 17%; width: 20%; }
+
+  .msg, .lucky, .keep { margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
+  .msg  { font-size: 3.9cqw; line-height: 1.3; text-wrap: balance; }
+  .lucky { margin-top: 1.2cqw; font-size: 2.9cqw; }
+  .keep { margin-top: 1cqw; font-size: 2.4cqw; font-style: italic; }
+
+  .scene.cracked .slip { animation: slip-out 1.4s cubic-bezier(.45,.05,.25,1) .15s both; }
+  .scene.cracked .pl   { animation: unfold 1.4s ease-in-out .15s both; }
+  @keyframes slip-out {
+    0%   { opacity: 0; z-index: 2; transform: translate(-1.8cqw, -46.3cqw) rotate(62deg) scale(.36); }
+    8%   { opacity: 1; }
+    34%  { z-index: 2; transform: translate(-1.4cqw, -33cqw) rotate(28deg) scale(.46); }
+    48%  { z-index: 5; transform: translate(-.4cqw, -17cqw) rotate(-5deg) scale(.62); }
+    76%  { opacity: 1; z-index: 5; transform: rotate(-1.6deg); }
+    100% { opacity: 1; z-index: 5; transform: rotate(-1.2deg); }
+  }
+  @keyframes unfold {
+    0%, 58% { transform: rotateY(-172deg); filter: brightness(.8); }
+    88%, 100% { transform: none; filter: none; }
+  }
+  .scene.cracked .msg  { opacity: .92; transition: opacity .7s ease 1.35s; }
+  .scene.cracked .lucky { opacity: .9; transition: opacity .7s ease 1.55s; }
+  .scene.cracked .keep { opacity: .8; transition: opacity .7s ease 1.85s; }
+
+  /* ---------- buttons ---------- */
+  .actions {
+    position: absolute; left: 0; right: 0; top: 75%;
+    display: flex; flex-direction: column; align-items: center; gap: 1.5cqw;
+    opacity: 0; visibility: hidden;
+    transition: opacity 1.2s ease, visibility 0s 1.2s;
+    z-index: 3;
+  }
+  .scene.cracked .actions { opacity: 1; visibility: visible; transition: opacity .8s ease 2s, visibility 0s 2s; }
+  .scene.leaving .actions { opacity: 0; transition: opacity .3s ease; }
+  .actions button { font: inherit; color: var(--red); background: none; border: 0; cursor: pointer; padding: 2cqw 1.5cqw; }
+  .another { font-size: max(15px, 4.2cqw) !important; border: 1.5px solid var(--red) !important; padding: 1.8cqw 4cqw !important; background: #fbf8f0 !important; transform: rotate(-.8deg); }
+  .another:hover { background: #f6ece2 !important; }
+  .manual { display: flex; flex-direction: column; gap: 4px; width: 80%; font-size: 11px; color: #8a7a6a; }
+  .manual[hidden] { display: none; }
+  .manual textarea { font: 12px/1.4 Arial, sans-serif; color: #3a3a3a; background: #fbfaf5; border: 1px solid #d9cfc2; padding: 6px; resize: none; }
+  .share { font-size: max(12px, 3.3cqw) !important; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  button:focus-visible { outline: 2px dashed #48668a; outline-offset: 3px; }
+
+  /* invisible tap targets over the bag and the cookie */
+  .hit { position: absolute; border: 0; padding: 0; background: none; cursor: pointer; z-index: 4; }
+  .hit[hidden] { display: none; }
+  .hit-bag    { left: 17.5%; width: 65%; top: 17%; height: 77%; }
+  .hit-cookie { left: 18%; width: 64%; top: 13.5%; height: 37%; }
+
+  .hint { position: absolute; left: 0; right: 0; top: 95.2%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
+  .hint.gone { opacity: 0; }
+
+  .sound {
+    position: fixed; top: max(10px, env(safe-area-inset-top)); right: 12px; z-index: 10;
+    font: 500 11px/1 Montserrat, Arial, sans-serif; letter-spacing: .06em;
+    color: #8a7a6a; background: none; border: 0; padding: 8px; cursor: pointer; opacity: .7;
+  }
+  .sound:hover { opacity: 1; }
+
+  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .pl, .scene.instant .msg, .scene.instant .lucky,
+  .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb {
+    transition: none !important; animation: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: .01s !important; animation-duration: .01s !important; }
+  }
+</style>
+</head>
+<body>
+
+<button class="sound" id="sound" type="button" aria-pressed="true">sound: on</button>
+
+<main class="scene" id="scene">
+  <button class="hit hit-bag" id="hitBag" type="button" aria-label="Take a fortune cookie from the bag"></button>
+  <button class="hit hit-cookie" id="hitCookie" type="button" aria-label="Crack the cookie open" hidden></button>
+
+  <div class="bag" aria-hidden="true">
+    <span class="ground"></span>
+        <img class="front-img" src="img/bag-body.png" alt="" width="412" height="692">
+    <svg class="seal" viewBox="-50 -50 100 100">
+      <g fill="#cf5a5d" font-family="Montserrat, Gotham, 'Helvetica Neue', Arial, sans-serif" font-weight="700" text-anchor="middle">
+        <circle r="46" fill="none" stroke="#cf5a5d" stroke-width="3"/>
+        <circle r="29" fill="none" stroke="#cf5a5d" stroke-width="1.8"/>
+        <path id="sealTop" d="M-37.5 0 A37.5 37.5 0 0 1 37.5 0" fill="none"/>
+        <path id="sealBot" d="M-37.5 0 A37.5 37.5 0 0 0 37.5 0" fill="none"/>
+        <text font-size="10.5" letter-spacing="1.6" dy="3.6"><textPath href="#sealTop" startOffset="50%">DAISIES</textPath></text>
+        <text font-size="7.6" letter-spacing=".9" dy="2.6"><textPath href="#sealBot" startOffset="50%">SOMETHING SMALL</textPath></text>
+        <circle cx="-38.5" cy="0" r="1.6"/><circle cx="38.5" cy="0" r="1.6"/>
+        <!-- a daisy -->
+        <g transform="rotate(8)">
+          <g id="petal"><ellipse cx="0" cy="-15" rx="4.4" ry="10.5" stroke="#cac9ca" stroke-width="1.3"/></g>
+          <use href="#petal" transform="rotate(30)"/><use href="#petal" transform="rotate(60)"/><use href="#petal" transform="rotate(90)"/>
+          <use href="#petal" transform="rotate(120)"/><use href="#petal" transform="rotate(150)"/><use href="#petal" transform="rotate(180)"/>
+          <use href="#petal" transform="rotate(210)"/><use href="#petal" transform="rotate(240)"/><use href="#petal" transform="rotate(270)"/>
+          <use href="#petal" transform="rotate(300)"/><use href="#petal" transform="rotate(330)"/>
+        </g>
+        <circle r="7.5" fill="#cac9ca"/>
+        <circle r="5.4"/>
+        <g fill="#cac9ca"><circle cx="-1.8" cy="-1.6" r=".9"/><circle cx="1.6" cy="-.6" r=".9"/><circle cx="-.4" cy="1.9" r=".9"/></g>
+      </g>
+    </svg>
+    <img class="band" src="img/bag-top.png" alt="" width="412" height="78">
+  </div>
+
+  <div class="mouth">
+    <div class="cookie" id="cookie">
+      <div class="body">
+        <img class="whole" src="img/cookie.png" alt="" width="301" height="293">
+        <img class="half r" src="img/cookie-back.png" alt="" width="301" height="293">
+        <img class="half l" src="img/cookie-front.png" alt="" width="301" height="293">
+        <div class="slip">
+          <div class="panel pl"><div class="face"><p class="msg" id="msg" aria-live="polite"></p><p class="lucky"></p><p class="keep">keep this one with you.</p></div></div>
+          <div class="panel pr" aria-hidden="true"><div class="face"><p class="msg"></p><p class="lucky"></p><p class="keep">keep this one with you.</p></div></div>
+        </div>
+        <span class="crumb" style="--x:-7cqw"></span>
+        <span class="crumb" style="--x:5cqw; --d:.05s; --z:.7"></span>
+        <span class="crumb" style="--x:-2cqw; --d:.12s; --z:.5"></span>
+        <span class="crumb" style="--x:9cqw; --d:.08s; --z:1.2"></span>
+        <span class="crumb" style="--x:1cqw; --d:.15s; --z:.6"></span>
+        <span class="crumb" style="--x:-11cqw; --d:.03s; --z:.8"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="another" id="another" type="button">another, please</button>
+    <button class="share" id="share" type="button">send this to someone</button>
+    <label class="manual" id="manual" hidden>copy this and send it:<textarea readonly rows="4"></textarea></label>
+  </div>
+
+  <p class="hint" id="hint" aria-hidden="true">(tap the bag)</p>
+</main>
+
+<script src="fortunes.js"></script>
+<script>
+  // Little paper-and-cookie sounds, synthesised with Web Audio (no files to load).
+  const sfx = (() => {
+    let ctx, noise, on = true;
+    try { on = localStorage.getItem("fc-sound") !== "off"; } catch (e) {}
+    const ac = () => {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        const d = noise.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    };
+    const env = (g, t, peak, attack, dur) => {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    };
+    // filtered noise burst: rustles, crunches, slides
+    const hiss = (at, dur, peak, type, freq, q = 1, attack = 0.004) => {
+      const c = ac(), t = c.currentTime + at;
+      const src = c.createBufferSource(); src.buffer = noise;
+      const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = c.createGain(); env(g, t, peak, attack, dur);
+      src.connect(f).connect(g).connect(c.destination);
+      src.start(t, Math.random() * 0.5, dur + 0.05);
+    };
+    // pitched blip: pops and thumps
+    const blip = (at, f0, f1, dur, peak, type = "sine") => {
+      const c = ac(), t = c.currentTime + at;
+      const o = c.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = c.createGain(); env(g, t, peak, 0.005, dur);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
+    };
+    const play = {
+      shake() {
+        for (let i = 0; i < 7; i++) {
+          const t = i * 0.1 + Math.random() * 0.02;
+          hiss(t, 0.09, 0.22, "bandpass", 2600 + Math.random() * 1400, 0.8);            // paper
+          if (i % 2 === 0) hiss(t + 0.03, 0.035, 0.18, "bandpass", 900 + Math.random() * 300, 4);  // cookie knocking about
+        }
+      },
+      pop() { blip(0, 260, 880, 0.13, 0.25); hiss(0, 0.05, 0.15, "highpass", 3000); },
+      crack() {
+        let t = 0;
+        for (let i = 0; i < 5; i++) {
+          hiss(t, 0.03 + Math.random() * 0.04, 0.5 - i * 0.07, "bandpass", 1800 + Math.random() * 1800, 0.9, 0.002);
+          t += 0.015 + Math.random() * 0.03;
+        }
+        blip(0, 190, 90, 0.05, 0.2, "triangle");
+      },
+      slip() { hiss(0.15, 0.5, 0.07, "highpass", 3200, 0.7, 0.15); },
+      unfold() { hiss(0, 0.06, 0.12, "bandpass", 5200, 1.2); hiss(0.08, 0.05, 0.08, "bandpass", 4200, 1.2); },
+    };
+    return {
+      get on() { return on; },
+      set on(v) { on = v; try { localStorage.setItem("fc-sound", v ? "on" : "off"); } catch (e) {} },
+      play(name) { if (!on) return; try { play[name](); } catch (e) { /* no audio here */ } },
+    };
+  })();
+</script>
+<script>
+  const scene = document.getElementById("scene");
+  const msg = document.getElementById("msg");
+  const setFortune = (f) => {
+    document.querySelectorAll(".msg").forEach((m) => { m.textContent = f ? f.text : ""; });
+    document.querySelectorAll(".lucky").forEach((m) => { m.textContent = f ? `Lucky Numbers ${f.lucky.join(", ")}` : ""; });
+  };
+  const hint = document.getElementById("hint");
+  const hitBag = document.getElementById("hitBag");
+  const hitCookie = document.getElementById("hitCookie");
+  const shareBtn = document.getElementById("share");
+  const manual = document.getElementById("manual");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // The bag holds PER_DAY cookies a day (local midnight to midnight); no repeats within a day.
+  const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD
+  let memory = { day: today(), seen: [] };   // fallback when storage is unavailable
+  function load() {
+    let d = memory;
+    try { d = JSON.parse(localStorage.getItem("fc-day")) || d; } catch (e) {}
+    if (d.day !== today() || !Array.isArray(d.seen)) d = { day: today(), seen: [] };
+    return d;
+  }
+  function save(d) {
+    memory = d;
+    try { localStorage.setItem("fc-day", JSON.stringify(d)); } catch (e) {}
+  }
+  const left = () => Math.max(0, PER_DAY - load().seen.length);
+
+  function pick() {
+    const d = load();
+    const unseen = FORTUNES.map((_, i) => i).filter((i) => !d.seen.includes(i));
+    const i = unseen[Math.floor(Math.random() * unseen.length)];
+    d.seen.push(i); save(d);
+    return FORTUNES[i];
+  }
+
+  const EMPTY = "that's all " + PER_DAY + " for today. come back tomorrow.";
+
+  function say(text) {
+    hint.classList.toggle("gone", !text);
+    if (text) hint.textContent = text;
+  }
+
+  let busy = false;
+
+  hitBag.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    hitBag.hidden = true;
+    say("");
+    sfx.play("shake");
+    scene.classList.add("shake");
+    await wait(750);
+    scene.classList.remove("shake");
+    if (!left()) {   // nothing left in the bag today
+      hitBag.hidden = false;
+      say(EMPTY);
+      busy = false;
+      return;
+    }
+    sfx.play("pop");
+    scene.classList.add("out");
+    await wait(500);
+    scene.classList.add("front");
+    await wait(900);
+    hitCookie.hidden = false;
+    hitCookie.focus({ preventScroll: true });
+    say("(now crack it open)");
+    busy = false;
+  });
+
+  hitCookie.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    hitCookie.hidden = true;
+    say("");
+    setFortune(pick());
+    scene.classList.add("pressing");
+    await wait(350);
+    scene.classList.remove("pressing");
+    scene.classList.add("cracked");
+    sfx.play("crack");
+    sfx.play("slip");
+    setTimeout(() => sfx.play("unfold"), 950);
+    busy = false;
+  });
+
+  document.getElementById("another").addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    scene.classList.add("leaving");
+    await wait(550);
+    scene.classList.add("instant");
+    scene.classList.remove("out", "front", "cracked", "leaving");
+    setFortune(null);
+    shareBtn.textContent = "send this to someone";
+    manual.hidden = true;
+    void scene.offsetWidth;   // apply the reset before re-enabling transitions
+    scene.classList.remove("instant");
+    hitBag.hidden = false;
+    hitBag.focus({ preventScroll: true });
+    const n = left();
+    say(n ? `(${n} left in the bag today)` : EMPTY);
+    busy = false;
+  });
+
+  if (!left()) say(EMPTY);
+
+  const soundBtn = document.getElementById("sound");
+  const showSound = () => { soundBtn.textContent = `sound: ${sfx.on ? "on" : "off"}`; soundBtn.setAttribute("aria-pressed", String(sfx.on)); };
+  showSound();
+  soundBtn.addEventListener("click", () => { sfx.on = !sfx.on; showSound(); });
+
+  // Copy text, falling back to the old selection trick where the clipboard API is blocked
+  // (e.g. when the page is shown inside a frame).
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
+      const ok = document.execCommand("copy"); ta.remove();
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  shareBtn.addEventListener("click", async () => {
+    const lucky = document.querySelector(".lucky").textContent;
+    // only share the page's address when it's the real one, not a framed preview
+    const url = location.protocol.startsWith("http") && window.top === window ? location.href : "";
+    const text = `\u201C${msg.textContent}\u201D\n${lucky}\n\u2014 from a fortune cookie, thought of you` + (url ? `\n${url}` : "");
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; }
+      catch (e) { if (e.name === "AbortError") return; /* blocked here: fall through to copying */ }
+    }
+    if (await copyText(text)) { shareBtn.textContent = "copied. go send it."; return; }
+    manual.hidden = false;
+    manual.querySelector("textarea").value = text;
+    manual.querySelector("textarea").select();
+  });
+</script>
+</body>
+</html>
