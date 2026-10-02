@@ -65,6 +65,12 @@
     transition: transform .5s cubic-bezier(.3,1.3,.5,1) .35s;
   }
   .scene.opened .inside { transform: none; }
+  /* my own seal, printed where the brand logo was */
+  .bag .seal {
+    position: absolute; left: 49.21%; top: 43.71%; width: 13.6%;
+    transform: translate(-50%, -50%) rotate(-1.5deg);
+    mix-blend-mode: multiply; opacity: .95; filter: blur(.2px);
+  }
   .bag .ground {
     position: absolute; left: 18%; width: 64%; top: 91.6%; height: 3%;
     border-radius: 50%;
@@ -212,6 +218,28 @@
     <span class="ground"></span>
     <span class="inside"></span>
     <img class="front-img" src="img/bag-body.png" alt="" width="412" height="692">
+    <svg class="seal" viewBox="-50 -50 100 100">
+      <g fill="#d65f62" font-family="Montserrat, Gotham, 'Helvetica Neue', Arial, sans-serif" font-weight="700" text-anchor="middle">
+        <circle r="46" fill="none" stroke="#d65f62" stroke-width="3"/>
+        <circle r="29" fill="none" stroke="#d65f62" stroke-width="1.8"/>
+        <path id="sealTop" d="M-37.5 0 A37.5 37.5 0 0 1 37.5 0" fill="none"/>
+        <path id="sealBot" d="M-37.5 0 A37.5 37.5 0 0 0 37.5 0" fill="none"/>
+        <text font-size="10.5" letter-spacing="1.6" dy="3.6"><textPath href="#sealTop" startOffset="50%">CAMILLE'S</textPath></text>
+        <text font-size="7.6" letter-spacing=".9" dy="2.6"><textPath href="#sealBot" startOffset="50%">SOMETHING SMALL</textPath></text>
+        <circle cx="-38.5" cy="0" r="1.6"/><circle cx="38.5" cy="0" r="1.6"/>
+        <!-- a daisy -->
+        <g transform="rotate(8)">
+          <g id="petal"><ellipse cx="0" cy="-15" rx="4.4" ry="10.5" stroke="#fff" stroke-width="1.3"/></g>
+          <use href="#petal" transform="rotate(30)"/><use href="#petal" transform="rotate(60)"/><use href="#petal" transform="rotate(90)"/>
+          <use href="#petal" transform="rotate(120)"/><use href="#petal" transform="rotate(150)"/><use href="#petal" transform="rotate(180)"/>
+          <use href="#petal" transform="rotate(210)"/><use href="#petal" transform="rotate(240)"/><use href="#petal" transform="rotate(270)"/>
+          <use href="#petal" transform="rotate(300)"/><use href="#petal" transform="rotate(330)"/>
+        </g>
+        <circle r="7.5" fill="#fff"/>
+        <circle r="5.4"/>
+        <g fill="#fff"><circle cx="-1.8" cy="-1.6" r=".9"/><circle cx="1.6" cy="-.6" r=".9"/><circle cx="-.4" cy="1.9" r=".9"/></g>
+      </g>
+    </svg>
     <img class="band" src="img/bag-top.png" alt="" width="412" height="78">
   </div>
 
