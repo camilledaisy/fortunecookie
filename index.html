@@ -146,9 +146,10 @@
   .pl::before { top: 9%; height: 13%; }
   .pl::after  { bottom: 7%; height: 17%; width: 20%; }
 
-  .msg, .keep { margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
+  .msg, .lucky, .keep { margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
   .msg  { font-size: 3.9cqw; line-height: 1.3; text-wrap: balance; }
-  .keep { margin-top: 1.4cqw; font-size: 2.6cqw; }
+  .lucky { margin-top: 1.2cqw; font-size: 2.9cqw; }
+  .keep { margin-top: 1cqw; font-size: 2.4cqw; font-style: italic; }
 
   .scene.cracked .slip { animation: slip-out 1.4s cubic-bezier(.45,.05,.25,1) .15s both; }
   .scene.cracked .pl   { animation: unfold 1.4s ease-in-out .15s both; }
@@ -165,7 +166,8 @@
     88%, 100% { transform: none; filter: none; }
   }
   .scene.cracked .msg  { opacity: .92; transition: opacity .7s ease 1.35s; }
-  .scene.cracked .keep { opacity: .85; transition: opacity .7s ease 1.75s; }
+  .scene.cracked .lucky { opacity: .9; transition: opacity .7s ease 1.55s; }
+  .scene.cracked .keep { opacity: .8; transition: opacity .7s ease 1.85s; }
 
   /* ---------- buttons ---------- */
   .actions {
@@ -199,7 +201,7 @@
   }
   .sound:hover { opacity: 1; }
 
-  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .pl, .scene.instant .msg,
+  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .pl, .scene.instant .msg, .scene.instant .lucky,
   .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb {
     transition: none !important; animation: none !important;
   }
@@ -252,8 +254,8 @@
         <img class="half r" src="img/cookie-back.png" alt="" width="301" height="293">
         <img class="half l" src="img/cookie-front.png" alt="" width="301" height="293">
         <div class="slip">
-          <div class="panel pl"><div class="face"><p class="msg" id="msg" aria-live="polite"></p><p class="keep">keep this one with you.</p></div></div>
-          <div class="panel pr" aria-hidden="true"><div class="face"><p class="msg"></p><p class="keep">keep this one with you.</p></div></div>
+          <div class="panel pl"><div class="face"><p class="msg" id="msg" aria-live="polite"></p><p class="lucky"></p><p class="keep">keep this one with you.</p></div></div>
+          <div class="panel pr" aria-hidden="true"><div class="face"><p class="msg"></p><p class="lucky"></p><p class="keep">keep this one with you.</p></div></div>
         </div>
         <span class="crumb" style="--x:-7cqw"></span>
         <span class="crumb" style="--x:5cqw; --d:.05s; --z:.7"></span>
@@ -341,42 +343,40 @@
 <script>
   const scene = document.getElementById("scene");
   const msg = document.getElementById("msg");
-  const setMsg = (t) => document.querySelectorAll(".msg").forEach((m) => { m.textContent = t; });
+  const setFortune = (f) => {
+    document.querySelectorAll(".msg").forEach((m) => { m.textContent = f ? f.text : ""; });
+    document.querySelectorAll(".lucky").forEach((m) => { m.textContent = f ? `Lucky Numbers ${f.lucky.join(", ")}` : ""; });
+  };
   const hint = document.getElementById("hint");
   const hitBag = document.getElementById("hitBag");
   const hitCookie = document.getElementById("hitCookie");
   const shareBtn = document.getElementById("share");
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  const shuffle = (a) => {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  };
-
-  // A shuffled deck, so nothing repeats until everything has been seen.
-  let deck = [];
-  const timely = Object.fromEntries(Object.entries(TIMELY).map(([k, v]) => [k, shuffle([...v])]));
-  let opened = 0;
-
-  function timeOfDay(now = new Date()) {
-    const h = now.getHours();
-    if (now.getDay() === 0 && h >= 17) return "sundayEvening";
-    if (h < 5) return "lateNight";
-    if (h < 10) return "morning";
-    return null;
+  // The bag holds PER_DAY cookies a day (local midnight to midnight); no repeats within a day.
+  const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD
+  let memory = { day: today(), seen: [] };   // fallback when storage is unavailable
+  function load() {
+    let d = memory;
+    try { d = JSON.parse(localStorage.getItem("fc-day")) || d; } catch (e) {}
+    if (d.day !== today() || !Array.isArray(d.seen)) d = { day: today(), seen: [] };
+    return d;
   }
+  function save(d) {
+    memory = d;
+    try { localStorage.setItem("fc-day", JSON.stringify(d)); } catch (e) {}
+  }
+  const left = () => Math.max(0, PER_DAY - load().seen.length);
 
   function pick() {
-    opened++;
-    if (opened === 7) return ENOUGH;
-    const pool = timely[timeOfDay()];
-    if (pool && pool.length && Math.random() < 0.3) return pool.pop();
-    if (!deck.length) deck = shuffle(Object.values(FORTUNES).flat());
-    return deck.pop();
+    const d = load();
+    const unseen = FORTUNES.map((_, i) => i).filter((i) => !d.seen.includes(i));
+    const i = unseen[Math.floor(Math.random() * unseen.length)];
+    d.seen.push(i); save(d);
+    return FORTUNES[i];
   }
+
+  const EMPTY = "that's all " + PER_DAY + " for today. come back tomorrow.";
 
   function say(text) {
     hint.classList.toggle("gone", !text);
@@ -394,6 +394,12 @@
     scene.classList.add("shake");
     await wait(750);
     scene.classList.remove("shake");
+    if (!left()) {   // nothing left in the bag today
+      hitBag.hidden = false;
+      say(EMPTY);
+      busy = false;
+      return;
+    }
     sfx.play("pop");
     scene.classList.add("out");
     await wait(500);
@@ -410,7 +416,7 @@
     busy = true;
     hitCookie.hidden = true;
     say("");
-    setMsg(pick());
+    setFortune(pick());
     scene.classList.add("pressing");
     await wait(350);
     scene.classList.remove("pressing");
@@ -428,15 +434,18 @@
     await wait(550);
     scene.classList.add("instant");
     scene.classList.remove("out", "front", "cracked", "leaving");
-    setMsg("");
+    setFortune(null);
     shareBtn.textContent = "send this to someone";
     void scene.offsetWidth;   // apply the reset before re-enabling transitions
     scene.classList.remove("instant");
     hitBag.hidden = false;
     hitBag.focus({ preventScroll: true });
-    say("(there's more in the bag)");
+    const n = left();
+    say(n ? `(${n} left in the bag today)` : EMPTY);
     busy = false;
   });
+
+  if (!left()) say(EMPTY);
 
   const soundBtn = document.getElementById("sound");
   const showSound = () => { soundBtn.textContent = `sound: ${sfx.on ? "on" : "off"}`; soundBtn.setAttribute("aria-pressed", String(sfx.on)); };
@@ -444,7 +453,8 @@
   soundBtn.addEventListener("click", () => { sfx.on = !sfx.on; showSound(); });
 
   shareBtn.addEventListener("click", async () => {
-    const text = `“${msg.textContent}”\n— from a fortune cookie, thought of you`;
+    const lucky = document.querySelector(".lucky").textContent;
+    const text = `“${msg.textContent}”\n${lucky}\n— from a fortune cookie, thought of you`;
     const url = location.protocol.startsWith("http") ? location.href : "";
     if (navigator.share) {
       try { await navigator.share({ text, url: url || undefined }); } catch (e) { /* closed the sheet */ }
