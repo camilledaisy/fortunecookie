@@ -96,13 +96,16 @@
   }
 
   .body { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(70, 45, 20, .22)); }
-  /* one photo, cut along the crease with a jagged break */
-  .half { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.3,1.4,.5,1); will-change: transform; }
-  .half img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
-  .l { clip-path: polygon(0 0, 30.6% 0.0%, 32.2% 5.5%, 34.2% 11.6%, 37.2% 17.1%, 38.9% 23.9%, 41.9% 29.4%, 43.5% 35.5%, 46.5% 41.0%, 48.5% 47.1%, 52.5% 51.2%, 54.5% 57.0%, 58.5% 60.8%, 60.1% 67.2%, 63.5% 72.4%, 64.1% 78.8%, 66.8% 84.0%, 67.4% 90.4%, 70.1% 95.2%, 70.4% 100.0%, 0 100%); transform-origin: 40% 85%; }
-  .r { clip-path: polygon(100% 0, 100% 100%, 69.8% 100.0%, 69.5% 95.2%, 66.8% 90.4%, 66.2% 84.0%, 63.5% 78.8%, 62.9% 72.4%, 59.5% 67.2%, 57.9% 60.8%, 53.9% 57.0%, 51.9% 51.2%, 47.9% 47.1%, 45.9% 41.0%, 42.9% 35.5%, 41.3% 29.4%, 38.3% 23.9%, 36.6% 17.1%, 33.6% 11.6%, 31.6% 5.5%, 30.0% 0.0%); transform-origin: 75% 80%; }
-  .scene.cracked .l { transform: translate(-12%, 3%) rotate(-13deg); }
-  .scene.cracked .r { transform: translate(13%, 2%) rotate(12deg); }
+  .whole, .half { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+  .whole { z-index: 3; }
+  .scene.cracked .whole { opacity: 0; }
+  /* the front half (with its curled bottom) and the back half it snaps off from */
+  .half { opacity: 0; transition: transform .9s cubic-bezier(.3,1.3,.5,1); will-change: transform; }
+  .scene.cracked .half { opacity: 1; }
+  .l { z-index: 3; transform-origin: 40% 90%; }
+  .r { z-index: 1; transform-origin: 70% 75%; }
+  .scene.cracked .l { transform: translate(-14%, 4%) rotate(-12deg); }
+  .scene.cracked .r { transform: translate(14%, -2%) rotate(13deg); }
 
   .crumb {
     position: absolute; left: 47%; top: 58%;
@@ -110,6 +113,7 @@
     background: #d9a055;
     border-radius: 45% 60% 40% 55%;
     opacity: 0;
+    z-index: 4;
   }
   .scene.cracked .crumb { animation: crumb 1.1s ease-in forwards; animation-delay: var(--d, 0s); }
   @keyframes crumb {
@@ -117,50 +121,51 @@
     100% { opacity: 0; transform: translate(var(--x), 22cqw) rotate(120deg) scale(var(--z, 1)); }
   }
 
-  /* ---------- the slip ---------- */
+  /* ---------- the slip ----------
+     It lives inside the cookie (so it can sit in the crack between the halves) and is
+     laid out in cookie-box units: it starts folded in the fold, gets pulled out while
+     swinging flat, comes to rest below the cookie, then opens along its fold. */
   .slip {
     position: absolute;
-    left: 6%; width: 88%;
-    top: 33.5%;
-    padding: 4.6cqw 5cqw 3.6cqw 8cqw;
-    background: #fbfaf5 var(--foxing);
+    left: -23.6%; width: 147.1%; top: 106.8%;
+    display: flex;
+    perspective: 120cqw;
     color: var(--ink-blue);
     font-family: Arial, "Helvetica Neue", Helvetica, Arimo, sans-serif;
     text-align: center;
-    box-shadow: 0 .3cqw .8cqw rgba(80, 60, 40, .22);
-    transform-origin: 50% 0;
-    transform: scaleY(.22) rotate(-1.5deg);
-    clip-path: inset(0 50% 0 50%);
-    opacity: 0;
-    transition: opacity .2s ease, clip-path 1.1s cubic-bezier(.25,.6,.3,1), transform .9s cubic-bezier(.4,0,.2,1), top .9s cubic-bezier(.4,0,.2,1);
     z-index: 2;
+    opacity: 0;
   }
-  /* the printed blue marks on the left edge, and the old fold */
-  .slip::before, .slip::after {
-    content: "";
-    position: absolute; left: 0;
-    width: 9%;
-    background: #2c55cf;
-    opacity: .9;
+  .panel { position: relative; width: 50%; overflow: hidden; background: #fbfaf5 var(--foxing); box-shadow: 0 .3cqw .7cqw rgba(80, 60, 40, .2); }
+  .face { width: 200%; padding: 4cqw 4.3cqw 3.1cqw 7cqw; }
+  .pr .face { margin-left: -100%; }
+  .pr { box-shadow: 0 .3cqw .7cqw rgba(80, 60, 40, .2), inset 1px 0 0 rgba(90, 70, 50, .14); }
+  .pl { transform-origin: 100% 50%; }
+  /* the printed blue marks on the left edge */
+  .pl::before, .pl::after { content: ""; position: absolute; left: 0; width: 18%; background: #2c55cf; opacity: .9; z-index: 1; }
+  .pl::before { top: 9%; height: 13%; }
+  .pl::after  { bottom: 7%; height: 17%; width: 20%; }
+
+  .msg, .keep { margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
+  .msg  { font-size: 3.9cqw; line-height: 1.3; text-wrap: balance; }
+  .keep { margin-top: 1.4cqw; font-size: 2.6cqw; }
+
+  .scene.cracked .slip { animation: slip-out 2.4s cubic-bezier(.45,.05,.25,1) .35s both; }
+  .scene.cracked .pl   { animation: unfold 2.4s ease-in-out .35s both; }
+  @keyframes slip-out {
+    0%   { opacity: 0; z-index: 2; transform: translate(-1.8cqw, -46.3cqw) rotate(62deg) scale(.36); }
+    8%   { opacity: 1; }
+    34%  { z-index: 2; transform: translate(-1.4cqw, -33cqw) rotate(28deg) scale(.46); }
+    48%  { z-index: 5; transform: translate(-.4cqw, -17cqw) rotate(-5deg) scale(.62); }
+    76%  { opacity: 1; z-index: 5; transform: rotate(-1.6deg); }
+    100% { opacity: 1; z-index: 5; transform: rotate(-1.2deg); }
   }
-  .slip::before { top: 9%; height: 13%; }
-  .slip::after  { bottom: 7%; height: 17%; width: 10%; }
-  .fold { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(90, 70, 50, .1); box-shadow: 1px 0 0 rgba(255, 255, 255, .8); }
-
-  .msg, .keep { position: relative; margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
-  .msg  { font-size: 4.5cqw; line-height: 1.3; text-wrap: balance; }
-  .keep { margin-top: 1.6cqw; font-size: 3cqw; }
-
-  .scene.cracked .slip {
-    top: 52.7%;
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-    transform: rotate(-1.2deg);
-    transition-delay: .35s, .4s, 1.7s, 1.7s;
+  @keyframes unfold {
+    0%, 58% { transform: rotateY(-172deg); filter: brightness(.8); }
+    88%, 100% { transform: none; filter: none; }
   }
   .scene.cracked .msg  { opacity: .92; transition-delay: 2.5s; }
-  .scene.cracked .keep { opacity: .85; transition-delay: 3.3s; }
-  .scene.leaving .slip { opacity: 0; transition: opacity .5s ease; }
+  .scene.cracked .keep { opacity: .85; transition-delay: 3.2s; }
 
   /* ---------- buttons ---------- */
   .actions {
@@ -187,7 +192,7 @@
   .hint { position: absolute; left: 0; right: 0; top: 95.2%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
   .hint.gone { opacity: 0; }
 
-  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .msg,
+  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .pl, .scene.instant .msg,
   .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb {
     transition: none !important; animation: none !important;
   }
@@ -213,8 +218,13 @@
   <div class="mouth">
     <div class="cookie" id="cookie">
       <div class="body">
-        <div class="half l"><img src="img/cookie.png" alt="" width="301" height="293"></div>
-        <div class="half r"><img src="img/cookie.png" alt="" width="301" height="293"></div>
+        <img class="whole" src="img/cookie.png" alt="" width="301" height="293">
+        <img class="half r" src="img/cookie-back.png" alt="" width="301" height="293">
+        <img class="half l" src="img/cookie-front.png" alt="" width="301" height="293">
+        <div class="slip">
+          <div class="panel pl"><div class="face"><p class="msg" id="msg" aria-live="polite"></p><p class="keep">keep this one with you.</p></div></div>
+          <div class="panel pr" aria-hidden="true"><div class="face"><p class="msg"></p><p class="keep">keep this one with you.</p></div></div>
+        </div>
         <span class="crumb" style="--x:-7cqw"></span>
         <span class="crumb" style="--x:5cqw; --d:.05s; --z:.7"></span>
         <span class="crumb" style="--x:-2cqw; --d:.12s; --z:.5"></span>
@@ -223,12 +233,6 @@
         <span class="crumb" style="--x:-11cqw; --d:.03s; --z:.8"></span>
       </div>
     </div>
-  </div>
-
-  <div class="slip" id="slip">
-    <span class="fold"></span>
-    <p class="msg" id="msg" aria-live="polite"></p>
-    <p class="keep">keep this one with you.</p>
   </div>
 
   <div class="actions">
@@ -243,6 +247,7 @@
 <script>
   const scene = document.getElementById("scene");
   const msg = document.getElementById("msg");
+  const setMsg = (t) => document.querySelectorAll(".msg").forEach((m) => { m.textContent = t; });
   const hint = document.getElementById("hint");
   const hitBag = document.getElementById("hitBag");
   const hitCookie = document.getElementById("hitCookie");
@@ -313,7 +318,7 @@
     busy = true;
     hitCookie.hidden = true;
     say("");
-    msg.textContent = pick();
+    setMsg(pick());
     scene.classList.add("pressing");
     await wait(450);
     scene.classList.remove("pressing");
@@ -328,7 +333,7 @@
     await wait(550);
     scene.classList.add("instant");
     scene.classList.remove("out", "front", "cracked", "leaving");
-    msg.textContent = "";
+    setMsg("");
     shareBtn.textContent = "send this to someone";
     void scene.offsetWidth;   // apply the reset before re-enabling transitions
     scene.classList.remove("instant");
