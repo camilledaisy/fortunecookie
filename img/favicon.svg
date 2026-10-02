@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100">
+  <circle r="48" fill="#f3ede2"/>
+  <g fill="#cf5a5d" transform="rotate(8)">
+    <g id="p"><ellipse cy="-24" rx="7.5" ry="17" stroke="#f3ede2" stroke-width="2.5"/></g>
+    <use href="#p" transform="rotate(30)"/><use href="#p" transform="rotate(60)"/><use href="#p" transform="rotate(90)"/>
+    <use href="#p" transform="rotate(120)"/><use href="#p" transform="rotate(150)"/><use href="#p" transform="rotate(180)"/>
+    <use href="#p" transform="rotate(210)"/><use href="#p" transform="rotate(240)"/><use href="#p" transform="rotate(270)"/>
+    <use href="#p" transform="rotate(300)"/><use href="#p" transform="rotate(330)"/>
+  </g>
+  <circle r="12" fill="#f3ede2"/>
+  <circle r="8.5" fill="#cf5a5d"/>
+</svg>
