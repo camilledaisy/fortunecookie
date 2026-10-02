@@ -5,25 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fortune Cookie</title>
 <meta name="description" content="something small, just for you.">
-<meta name="theme-color" content="#f3ead5">
+<meta name="theme-color" content="#eee4d0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cream: #f3ead5;
-    --paper: #fbf6ea;
     --red: #c4493d;
-    --red-ink: #b23c31;
-    --blue: #48668a;
-    --gold: #e6b264;
-    --gold-dark: #d08f45;
-    --brown: #9b5a26;
-    --ink: #5a4636;
-    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E");
-    --cw: min(70vw, 300px);              /* cookie width */
-    --gap: 10px;                         /* cookie → slip */
-    --rest: 90px;                        /* cookie sits lower until opened */
+    --ink-blue: #2f55c2;
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+    --foxing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.3' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .78 0 0 0 0 .5 0 0 0 0 .34 13 0 0 0 -9.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
   }
 
   * { box-sizing: border-box; }
@@ -32,298 +23,380 @@
     min-height: 100svh;
     display: grid;
     place-items: center;
-    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
-    background: var(--cream) var(--noise);
-    color: var(--ink);
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+    background: #eee4d0 var(--noise);
+    color: #5a4636;
     font-family: "Courier Prime", "Courier New", monospace;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
 
-  /* the printed label, like the front of an old cookie bag */
-  .label {
+  /* Everything lives on one stage measured in "bag units": the SVG viewBox is
+     400×720, so 1 unit = .25cqw. */
+  .scene {
     position: relative;
-    width: 100%;
-    max-width: 460px;
-    padding: 28px 30px 22px;
-    border: 2px solid var(--red);
-    border-left-width: 13px;
-    border-right-width: 13px;
-    background: var(--paper) var(--noise);
-    text-align: center;
-    transform: rotate(-0.4deg);
-  }
-  .label::before {               /* thin inner rules beside the thick bands */
-    content: "";
-    position: absolute;
-    inset: 0 6px;
-    border-left: 1.5px solid var(--red);
-    border-right: 1.5px solid var(--red);
-    filter: url(#rough);
-    pointer-events: none;
+    width: min(94vw, 430px, calc((100svh - 24px) * .5556));
+    aspect-ratio: 400 / 720;
+    container-type: size;
   }
 
-  h1 {
-    margin: 0;
-    font-family: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
-    font-weight: 700;
-    font-size: clamp(2.3rem, 11vw, 3.4rem);
-    line-height: .92;
-    letter-spacing: .03em;
-    color: var(--red);
-    text-shadow: 1.5px 1px 0 rgba(72, 102, 138, .22);   /* a little misregistration */
-    filter: url(#rough);
+  /* ---------- the bag ---------- */
+  .bag { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 95%; }
+  .scene.front .bag { opacity: .1; }
+  .scene.wiggle .bag { animation: wiggle .35s ease-in-out; }
+  @keyframes wiggle {
+    0%, 100% { transform: none; }
+    30% { transform: rotate(-1.2deg) scaleY(.99); }
+    65% { transform: rotate(.9deg); }
   }
-  h1 span { display: block; }
+  .hit-bag:hover ~ .bag { transform: translateY(-.6cqw); }
 
-  .rule { display: block; width: 190px; max-width: 70%; margin: 10px auto 8px; color: var(--red); filter: url(#rough); }
+  .roll, .flap, .back { transform-box: fill-box; transform-origin: 50% 100%; }
+  .roll { transition: transform .35s ease-in, opacity .35s ease-in; }
+  .flap, .back { transform: scaleY(0); opacity: 0; transition: transform .55s cubic-bezier(.3,1.3,.5,1) .25s, opacity .2s ease .25s; }
+  .scene.opened .roll { transform: scaleY(.1); opacity: 0; }
+  .scene.opened .flap, .scene.opened .back { transform: none; opacity: 1; }
 
-  .tagline { margin: 0; text-wrap: balance; font-style: italic; font-size: .98rem; opacity: .85; }
-
-  /* ---------- cookie ---------- */
-  .stage { margin-top: 18px; transition: opacity .5s ease; }
-  .stage.fade { opacity: 0; }
-  .stage.instant, .stage.instant * { transition: none !important; animation: none !important; }
+  /* ---------- the cookie ---------- */
+  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 0 79.7% 0); }   /* hidden below the bag's front edge */
+  .scene.front .mouth { clip-path: none; }
 
   .cookie {
-    display: block;
-    width: var(--cw);
-    margin: 0 auto;
-    padding: 0;
-    border: 0;
-    background: none;
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
+    --cy: 290; --s: .75;
+    position: absolute; left: 0; top: 0;
+    width: 60cqw; aspect-ratio: 260 / 200;
+    transform: translate(calc(200 * .25cqw - 30cqw), calc(var(--cy) * .25cqw - 23.08cqw)) scale(var(--s));
+    transition: transform .9s cubic-bezier(.35,.1,.25,1), opacity .5s ease;
+    will-change: transform;
   }
-  .cookie:focus-visible { outline: 2px dashed var(--blue); outline-offset: 6px; }
-  .cookie svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .cookie .art { filter: url(#rough); transform-box: view-box; transform-origin: 150px 176px; transition: transform .3s ease; }
-  .stage:not(.open) .cookie:hover .art { transform: translateY(-3px) rotate(-1deg); }
+  .scene.out .cookie   { --cy: 76; }
+  .scene.front .cookie { --cy: 250; --s: 1.15; }
+  .scene.leaving .cookie { opacity: 0; }
 
-  .half { transform-box: view-box; transform-origin: 150px 176px; transition: transform .9s cubic-bezier(.3,1.4,.5,1); }
-  .tab { transition: opacity .25s ease; }
-
-  .stage.pressing .art { animation: press .45s ease-in-out; }
+  .body { position: absolute; inset: 0; }
+  .scene.pressing .body { animation: press .45s ease-in-out; }
   @keyframes press {
-    0%   { transform: none; }
-    30%  { transform: scale(.97, .94) rotate(.8deg); }
-    55%  { transform: scale(.96, .93) rotate(-1deg); }
-    80%  { transform: scale(.985, .97) rotate(.4deg); }
-    100% { transform: none; }
+    30% { transform: scale(.97, .94) rotate(.8deg); }
+    55% { transform: scale(.96, .93) rotate(-1deg); }
+    80% { transform: scale(.985, .97) rotate(.4deg); }
   }
 
-  .stage.open .left  { transform: translate(-30px, 6px) rotate(-17deg); }
-  .stage.open .right { transform: translate(32px, 9px) rotate(19deg); }
-  .stage.open .tab   { opacity: 0; }
+  .half { position: absolute; inset: 0; transform-origin: 50% 63%; transition: transform .9s cubic-bezier(.3,1.4,.5,1); will-change: transform; }
+  .half svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .scene.cracked .l { transform: translate(-13%, 4%) rotate(-17deg); }
+  .scene.cracked .r { transform: translate(14%, 6%) rotate(19deg); }
+  .tab { transition: opacity .25s; }
+  .scene.cracked .tab { opacity: 0; }
 
-  .crumb { opacity: 0; transform-box: fill-box; }
-  .stage.open .crumb { animation: crumb 1.1s ease-in forwards; animation-delay: var(--d, 0s); }
+  .crumb {
+    position: absolute; left: 50%; top: 63%;
+    width: 1.6cqw; height: 1.3cqw;
+    background: #d9a055;
+    border-radius: 45% 60% 40% 55%;
+    opacity: 0;
+  }
+  .scene.cracked .crumb { animation: crumb 1.1s ease-in forwards; animation-delay: var(--d, 0s); }
   @keyframes crumb {
-    0%   { opacity: 1; transform: translate(0, 0); }
-    100% { opacity: 0; transform: translate(var(--x), 70px) rotate(90deg); }
+    0%   { opacity: 1; transform: translate(0, 0) scale(var(--z, 1)); }
+    100% { opacity: 0; transform: translate(var(--x), 22cqw) rotate(120deg) scale(var(--z, 1)); }
   }
 
-  .cookie, .hint { transform: translateY(var(--rest)); transition: transform .5s ease, opacity .3s; }
-  .stage.lift .cookie, .stage.lift .hint { transform: none; }
-  .hint { margin: 6px 0 0; height: 14px; line-height: 14px; font-size: .75rem; letter-spacing: .08em; opacity: .55; transition: opacity .3s; }
-  .stage.open .hint { opacity: 0; }
-
-  /* ---------- the slip of paper ---------- */
-  .fortune { position: relative; z-index: 2; margin-top: var(--gap); }
-
+  /* ---------- the slip ---------- */
   .slip {
-    position: relative;
-    width: min(100%, 360px);
-    min-height: 104px;
-    margin: 0 auto;
-    padding: 22px 22px;
-    display: grid;
-    place-items: center;
-    background: #fffdf6 var(--noise);
-    box-shadow: 0 1px 2px rgba(90, 60, 30, .18), 0 6px 14px -8px rgba(90, 60, 30, .3);
+    position: absolute;
+    left: 6%; width: 88%;
+    top: 36.2%;
+    padding: 4.6cqw 5cqw 3.6cqw 8cqw;
+    background: #fbfaf5 var(--foxing);
+    color: var(--ink-blue);
+    font-family: Arial, "Helvetica Neue", Helvetica, Arimo, sans-serif;
+    text-align: center;
+    box-shadow: 0 .3cqw .8cqw rgba(80, 60, 40, .22);
     transform-origin: 50% 0;
-    /* tucked inside the cookie: thin, centred on the crack, clipped to nothing */
-    transform: translateY(calc(var(--cw) * -0.3 - var(--gap) - 10px)) scaleY(.22) rotate(-1.5deg);
+    transform: scaleY(.22) rotate(-1.5deg);
     clip-path: inset(0 50% 0 50%);
     opacity: 0;
-    transition: opacity .2s ease, clip-path 1.1s cubic-bezier(.25,.6,.3,1), transform .9s cubic-bezier(.4,0,.2,1);
+    transition: opacity .2s ease, clip-path 1.1s cubic-bezier(.25,.6,.3,1), transform .9s cubic-bezier(.4,0,.2,1), top .9s cubic-bezier(.4,0,.2,1);
+    z-index: 2;
   }
-  .slip::before {                /* printed rules, top and bottom */
+  /* the printed blue marks on the left edge, and the old fold */
+  .slip::before, .slip::after {
     content: "";
-    position: absolute;
-    inset: 7px 10px;
-    border-top: 1px solid currentColor;
-    border-bottom: 1px solid currentColor;
-    opacity: .35;
+    position: absolute; left: 0;
+    width: 9%;
+    background: #2c55cf;
+    opacity: .9;
   }
-  .slip { color: var(--red-ink); }
-  .slip.blue { color: var(--blue); }
+  .slip::before { top: 9%; height: 13%; }
+  .slip::after  { bottom: 7%; height: 17%; width: 10%; }
+  .fold { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(90, 70, 50, .1); box-shadow: 1px 0 0 rgba(255, 255, 255, .8); }
 
-  .msg {
-    margin: 0;
-    font-size: 1.06rem;
-    line-height: 1.45;
-    text-wrap: balance;
-    text-shadow: 0 0 .6px currentColor;   /* a touch of ink bleed */
-    opacity: 0;
-    transition: opacity 1s ease;
-  }
+  .msg, .keep { position: relative; margin: 0; opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 .5px currentColor; }
+  .msg  { font-size: 4.5cqw; line-height: 1.3; text-wrap: balance; }
+  .keep { margin-top: 1.6cqw; font-size: 3cqw; }
 
-  .keep { margin: 12px 0 0; font-size: .74rem; font-style: italic; opacity: 0; transition: opacity 1s ease; }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 6px 18px;
-    margin-top: 18px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 1.2s ease, visibility 0s 1.2s;
-  }
-  .actions button {
-    font: inherit;
-    color: var(--red);
-    background: none;
-    border: 0;
-    padding: 8px 4px;
-    cursor: pointer;
-  }
-  .another {
-    font-size: .95rem !important;
-    border: 1.5px solid var(--red) !important;
-    padding: 7px 14px !important;
-    transform: rotate(-0.8deg);
-  }
-  .another:hover, .another:focus-visible { background: rgba(196, 73, 61, .07) !important; }
-  .share { font-size: .78rem !important; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; opacity: .85; }
-  .actions button:focus-visible { outline: 2px dashed var(--blue); outline-offset: 3px; }
-
-  /* the reveal, in order: slide out, drop down + unfold, ink appears, then the rest */
-  .stage.open .slip {
+  .scene.cracked .slip {
+    top: 51.7%;
     opacity: 1;
     clip-path: inset(0 0 0 0);
-    transform: none;
-    transition-delay: .35s, .4s, 1.7s;
+    transform: rotate(-1.2deg);
+    transition-delay: .35s, .4s, 1.7s, 1.7s;
   }
-  .stage.open .msg     { opacity: 1; transition-delay: 2.5s; }
-  .stage.open .keep    { opacity: .7; transition-delay: 3.4s; }
-  .stage.open .actions { opacity: 1; visibility: visible; transition: opacity 1.2s ease 4.6s, visibility 0s 4.6s; }
+  .scene.cracked .msg  { opacity: .92; transition-delay: 2.5s; }
+  .scene.cracked .keep { opacity: .85; transition-delay: 3.3s; }
+  .scene.leaving .slip { opacity: 0; transition: opacity .5s ease; }
 
-  /* ---------- the back of the bag ---------- */
-  footer { margin-top: 26px; color: var(--red); line-height: 1.15; }
-  .count { margin: 0; font-family: "Josefin Sans", sans-serif; font-weight: 700; font-size: 1.15rem; letter-spacing: .06em; filter: url(#rough); }
-  .count sup { font-size: .6em; }
-  .net { margin: 2px 0 0; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: .68rem; letter-spacing: .08em; }
-  .fine { margin: 8px 0 0; font-size: .66rem; color: var(--ink); opacity: .6; }
+  /* ---------- buttons ---------- */
+  .actions {
+    position: absolute; left: 0; right: 0; top: 77%;
+    display: flex; flex-direction: column; align-items: center; gap: 1.5cqw;
+    opacity: 0; visibility: hidden;
+    transition: opacity 1.2s ease, visibility 0s 1.2s;
+    z-index: 3;
+  }
+  .scene.cracked .actions { opacity: 1; visibility: visible; transition: opacity 1.2s ease 4.4s, visibility 0s 4.4s; }
+  .scene.leaving .actions { opacity: 0; transition: opacity .3s ease; }
+  .actions button { font: inherit; color: var(--red); background: none; border: 0; cursor: pointer; padding: 2cqw 1.5cqw; }
+  .another { font-size: max(15px, 4.2cqw) !important; border: 1.5px solid var(--red) !important; padding: 1.8cqw 4cqw !important; background: #fbf8f0 !important; transform: rotate(-.8deg); }
+  .another:hover { background: #f6ece2 !important; }
+  .share { font-size: max(12px, 3.3cqw) !important; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  button:focus-visible { outline: 2px dashed #48668a; outline-offset: 3px; }
 
-  @media (max-height: 640px) {
-    .label { padding-top: 18px; }
-    .stage { margin-top: 10px; }
-    footer { margin-top: 16px; }
+  /* invisible tap targets over the bag and the cookie */
+  .hit { position: absolute; border: 0; padding: 0; background: none; cursor: pointer; z-index: 4; }
+  .hit[hidden] { display: none; }
+  .hit-bag    { left: 18%; width: 64%; top: 23%; height: 73%; }
+  .hit-cookie { left: 14%; width: 72%; top: 19%; height: 31%; }
+
+  .hint { position: absolute; left: 0; right: 0; top: 96.6%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
+  .hint.gone { opacity: 0; }
+
+  .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .msg,
+  .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb, .scene.instant .tab {
+    transition: none !important; animation: none !important;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .stage.pressing .art, .stage.open .crumb { animation: none; }
-    .half, .cookie, .hint { transition-duration: .01s; }
-    .slip { transform: none; clip-path: none; transition: opacity .8s ease; }
-    .stage.open .slip { transition-delay: .2s; }
-    .stage.open .msg { transition-delay: .6s; }
-    .stage.open .keep { transition-delay: 1s; }
-    .stage.open .actions { transition: opacity .8s ease 1.8s, visibility 0s 1.8s; }
+    *, *::before, *::after { transition-duration: .01s !important; animation-duration: .01s !important; }
   }
 </style>
 </head>
 <body>
 
-<!-- slightly wobbly printing -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="rough">
-    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
-    <feDisplacementMap in="SourceGraphic" scale="2.2"/>
-  </filter>
-  <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-    <circle cx="2" cy="2" r="1.2" fill="#b8742f" opacity=".45"/>
-  </pattern>
+  <defs>
+    <!-- slightly wobbly printing -->
+    <filter id="rough">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
+      <feDisplacementMap in="SourceGraphic" scale="1.6"/>
+    </filter>
+    <!-- baked surface: bumpy light + little pores -->
+    <filter id="bake" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="2" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale=".7" lighting-color="#fff" result="l">
+        <feDistantLight azimuth="235" elevation="62"/>
+      </feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="l" operator="arithmetic" k1="1.09" result="t"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="2" seed="9" result="p"/>
+      <feColorMatrix in="p" values="0 0 0 0 .66  0 0 0 0 .4  0 0 0 0 .18  -22 0 0 0 6.4"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".4"/></feComponentTransfer>
+      <feComposite in2="SourceAlpha" operator="in" result="pc"/>
+      <feMerge><feMergeNode in="t"/><feMergeNode in="pc"/></feMerge>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="soft2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="paperTex" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale=".22" lighting-color="#fff" result="l"><feDistantLight azimuth="225" elevation="70"/></feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="l" operator="arithmetic" k1="1.05"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-200%" width="160%" height="500%"><feGaussianBlur stdDeviation="7"/></filter>
+
+    <linearGradient id="cookieBase" x1="0" y1="0" x2=".3" y2="1">
+      <stop offset="0" stop-color="#f0c98e"/>
+      <stop offset=".5" stop-color="#e5b06d"/>
+      <stop offset="1" stop-color="#cf914c"/>
+    </linearGradient>
+    <radialGradient id="cookieGlow">
+      <stop offset="0" stop-color="#fff0cc" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#fff0cc" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paperShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e4ddce"/>
+      <stop offset=".18" stop-color="#f5f2ea"/>
+      <stop offset=".6" stop-color="#fbf9f4"/>
+      <stop offset="1" stop-color="#e8e1d3"/>
+    </linearGradient>
+    <linearGradient id="backWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ebe4d6"/>
+      <stop offset=".25" stop-color="#9d8b70"/>
+      <stop offset="1" stop-color="#6e5d47"/>
+    </linearGradient>
+    <linearGradient id="kraft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ddc8a2"/>
+      <stop offset=".55" stop-color="#c7ab7e"/>
+      <stop offset="1" stop-color="#a68a5f"/>
+    </linearGradient>
+    <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <circle cx="2" cy="2" r="1.4" fill="#e09a45" opacity=".55"/>
+    </pattern>
+
+    <!-- cookie halves, in cookie space (viewBox -130 -100 260 200) -->
+    <path id="shapeL" d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60 C2 -30 2 0 8 26 C-20 40 -70 56 -108 72 Z"/>
+    <path id="shapeR" d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68 C80 52 36 38 8 26 C2 0 2 -30 6 -60 Z"/>
+    <clipPath id="clipL"><use href="#shapeL"/></clipPath>
+    <clipPath id="clipR"><use href="#shapeR"/></clipPath>
+  </defs>
 </svg>
 
-<main class="label">
-  <h1><span>Fortune</span><span>Cookie</span></h1>
-  <svg class="rule" viewBox="0 0 190 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
-    <path d="M0 8H80M110 8H190M80 8V3H110V8M86 3V12H104V3M92 12V8H98V12"/>
+<main class="scene" id="scene">
+  <button class="hit hit-bag" id="hitBag" type="button" aria-label="Take a fortune cookie from the bag"></button>
+  <button class="hit hit-cookie" id="hitCookie" type="button" aria-label="Crack the cookie open" hidden></button>
+
+  <svg class="bag" viewBox="0 0 400 720" aria-hidden="true">
+    <ellipse cx="200" cy="692" rx="150" ry="11" fill="#5d452b" opacity=".3" filter="url(#shadow)"/>
+
+    <!-- inside of the bag, seen once the top is unrolled -->
+    <path class="back" d="M84 214 L86 130 C140 125 260 125 314 130 L316 214 Z" fill="url(#backWall)"/>
+
+    <path d="M80 204 C79 380 78 540 76 684 C150 690 250 690 324 684 C322 540 321 380 320 204 Z" fill="url(#paperShade)" filter="url(#paperTex)"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M95 212 L93 676" stroke="#d6cebe" stroke-width="1.4"/>
+      <path d="M305 212 L307 676" stroke="#d6cebe" stroke-width="1.4"/>
+      <path d="M78 664 C150 668 250 668 322 664" stroke="#ddd5c6" stroke-width="1.4"/>
+      <path d="M140 236 C150 300 146 380 152 430" stroke="#e7e1d5" stroke-width="2"/>
+      <path d="M262 226 C256 280 266 340 258 392" stroke="#ece6db" stroke-width="2"/>
+    </g>
+
+    <!-- unrolled front flap -->
+    <g class="flap">
+      <path d="M80 214 L80 147 C110 142 130 150 160 145 C190 141 215 150 245 144 C275 140 300 147 320 145 L320 214 Z" fill="url(#paperShade)"/>
+      <path d="M80 147 C110 142 130 150 160 145 C190 141 215 150 245 144 C275 140 300 147 320 145" fill="none" stroke="#d2c9b8" stroke-width="1.2"/>
+      <path d="M120 150 L124 206 M205 148 L200 210 M270 146 L274 204" stroke="#e6dfd2" stroke-width="1.6" fill="none"/>
+      <path d="M80 210 C150 214 250 214 320 210" stroke="#dcd3c3" stroke-width="2" fill="none"/>
+    </g>
+
+    <!-- rolled-down top -->
+    <g class="roll">
+      <rect x="71" y="176" width="258" height="36" rx="7" fill="url(#kraft)"/>
+      <path d="M78 184 C150 180 250 180 322 184" stroke="#efe0c2" stroke-width="2" fill="none" opacity=".8"/>
+      <path d="M76 205 C150 209 250 209 324 205" stroke="#8f7650" stroke-width="1.5" fill="none" opacity=".6"/>
+      <path d="M71 212 C150 218 250 218 329 212" stroke="#6e5d47" stroke-width="3" fill="none" opacity=".15" filter="url(#soft2)"/>
+    </g>
+
+    <!-- the printed label -->
+    <g filter="url(#rough)">
+      <rect x="101" y="262" width="198" height="384" fill="none" stroke="#c4493d" stroke-width="1.6"/>
+      <rect x="101" y="262" width="13" height="384" fill="#c4493d"/>
+      <rect x="286" y="262" width="13" height="384" fill="#c4493d"/>
+      <path d="M119 262 V646 M281 262 V646" stroke="#c4493d" stroke-width="1.1"/>
+
+      <g font-family="'Josefin Sans', Futura, 'Century Gothic', sans-serif" font-weight="700" font-size="31" text-anchor="middle" letter-spacing="1">
+        <text x="201.3" y="323" fill="#48668a" opacity=".22">FORTUNE</text>
+        <text x="201.3" y="357" fill="#48668a" opacity=".22">COOKIE</text>
+        <text x="200" y="322" fill="#c4493d">FORTUNE</text>
+        <text x="200" y="356" fill="#c4493d">COOKIE</text>
+      </g>
+      <path d="M134 374 H186 M214 374 H266 M186 374 V369 H214 V374 M190 369 V379 H210 V369 M196 379 V374 H204 V379" fill="none" stroke="#c4493d" stroke-width="1.4"/>
+      <g font-family="'Courier Prime', 'Courier New', monospace" font-style="italic" font-size="11" fill="#6a5645" text-anchor="middle">
+        <text x="200" y="398">something small,</text>
+        <text x="200" y="412">just for you.</text>
+      </g>
+
+      <!-- flat printed cookie, like on the old bags -->
+      <g transform="translate(200 486) scale(.5) translate(-150 -112)" stroke="#d48d3b" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M52 160 L36 194 L62 200 L76 164 Z" fill="#fbfaf5" stroke="#c4493d" stroke-width="3"/>
+        <rect x="47" y="180" width="11" height="11" fill="none" stroke="#c4493d" stroke-width="2.5" transform="rotate(18 52 186)"/>
+        <path d="M150 46 C122 30 76 44 54 82 C38 110 30 144 32 168 C66 158 114 162 150 178 C162 140 162 88 150 46 Z" fill="#f4dc94"/>
+        <path d="M32 168 C62 146 112 146 146 160 L150 178 C114 162 66 158 32 168 Z" fill="url(#dots)"/>
+        <path d="M150 46 C180 32 226 48 248 88 C262 114 270 146 268 166 C234 158 186 162 150 178 C140 140 140 88 150 46 Z" fill="#f4dc94"/>
+        <path d="M268 166 C238 146 188 146 154 160 L150 178 C186 162 234 158 268 166 Z" fill="url(#dots)"/>
+      </g>
+
+      <g text-anchor="middle" fill="#c4493d">
+        <text x="200" y="590" font-family="'Josefin Sans', sans-serif" font-weight="700" font-size="17" letter-spacing="1">1<tspan font-size="10" dy="-6">*</tspan><tspan dy="6"> COOKIE</tspan></text>
+        <text x="200" y="606" font-family="'Josefin Sans', sans-serif" font-weight="600" font-size="8.4" letter-spacing=".8">NET WT. ABOUT ONE SMALL SMILE</text>
+        <text x="200" y="626" font-family="'Courier Prime', monospace" font-size="8.4" fill="#6a5645">*one at a time. there's no hurry.</text>
+      </g>
+    </g>
   </svg>
-  <p class="tagline">something small, just for you.</p>
 
-  <div class="stage" id="stage">
-    <button class="cookie" id="cookie" type="button" aria-label="Open the fortune cookie">
-      <svg viewBox="0 0 300 200" aria-hidden="true">
-        <g class="art" stroke="#9b5a26" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-          <!-- the little paper tab peeking out -->
-          <g class="tab">
-            <path d="M52 160 L36 194 L62 200 L76 164 Z" fill="#fffdf6" stroke="#c9b9a0" stroke-width="1.5"/>
-            <rect x="47" y="180" width="11" height="11" fill="none" stroke="#c4493d" stroke-width="1.5" transform="rotate(18 52 186)"/>
-          </g>
-
-          <g class="half left">
-            <path d="M150 46 C122 30 76 44 54 82 C38 110 30 144 32 168 C66 158 114 162 150 178 C162 140 162 88 150 46 Z" fill="#e6b264"/>
-            <path d="M32 168 C62 146 112 146 146 160 L150 178 C114 162 66 158 32 168 Z" fill="#d08f45"/>
-            <path d="M32 168 C62 146 112 146 146 160 L150 178 C114 162 66 158 32 168 Z" fill="url(#dots)" stroke="none"/>
-            <path d="M126 52 C112 80 112 120 124 152" fill="none" stroke-width="1.8" opacity=".45"/>
-            <path d="M70 70 C84 52 104 44 122 44" fill="none" stroke="#f7dca6" stroke-width="5" opacity=".9"/>
-            <circle cx="86" cy="100" r="1.6" fill="#c98a43" stroke="none"/>
-            <circle cx="100" cy="122" r="1.2" fill="#c98a43" stroke="none"/>
-            <circle cx="70" cy="128" r="1.4" fill="#c98a43" stroke="none"/>
-          </g>
-
-          <g class="half right">
-            <path d="M150 46 C180 32 226 48 248 88 C262 114 270 146 268 166 C234 158 186 162 150 178 C140 140 140 88 150 46 Z" fill="#e6b264"/>
-            <path d="M268 166 C238 146 188 146 154 160 L150 178 C186 162 234 158 268 166 Z" fill="#d08f45"/>
-            <path d="M268 166 C238 146 188 146 154 160 L150 178 C186 162 234 158 268 166 Z" fill="url(#dots)" stroke="none"/>
-            <path d="M174 54 C188 82 188 120 176 152" fill="none" stroke-width="1.8" opacity=".45"/>
-            <path d="M180 46 C200 44 220 54 234 70" fill="none" stroke="#f7dca6" stroke-width="5" opacity=".9"/>
-            <circle cx="212" cy="98" r="1.5" fill="#c98a43" stroke="none"/>
-            <circle cx="226" cy="122" r="1.2" fill="#c98a43" stroke="none"/>
-            <circle cx="198" cy="128" r="1.6" fill="#c98a43" stroke="none"/>
-          </g>
-
-          <g stroke="none" fill="#d9a055">
-            <circle class="crumb" cx="148" cy="174" r="3"   style="--x:-26px"/>
-            <circle class="crumb" cx="153" cy="172" r="2.2" style="--x:18px; --d:.05s"/>
-            <circle class="crumb" cx="145" cy="178" r="1.6" style="--x:-8px; --d:.12s"/>
-            <circle class="crumb" cx="156" cy="178" r="2.6" style="--x:30px; --d:.08s"/>
-            <circle class="crumb" cx="150" cy="168" r="1.4" style="--x:4px; --d:.15s"/>
-            <circle class="crumb" cx="142" cy="172" r="2"   style="--x:-40px; --d:.03s"/>
-          </g>
-        </g>
-      </svg>
-    </button>
-    <p class="hint" aria-hidden="true">(tap the cookie)</p>
-
-    <div class="fortune">
-      <div class="slip" id="slip"><p class="msg" id="msg" aria-live="polite"></p></div>
-      <p class="keep">keep this one with you.</p>
-      <div class="actions">
-        <button class="another" id="another" type="button">another, please</button>
-        <button class="share" id="share" type="button">send this to someone</button>
+  <div class="mouth">
+    <div class="cookie" id="cookie">
+      <div class="body">
+        <div class="half r">
+          <svg viewBox="-130 -100 260 200" aria-hidden="true">
+            <g class="tab">
+            <path d="M-102 74 C-50 48 -14 32 8 26 C40 38 80 54 112 69 C60 80 -40 82 -102 74 Z" fill="#b97c3e" filter="url(#bake)"/>
+            <path d="M-50 58 C-20 42 0 34 8 30 C30 40 60 52 80 62" fill="none" stroke="#7d4a20" stroke-width="12" opacity=".45" filter="url(#soft)"/>
+            </g>
+            <g filter="url(#bake)">
+              <use href="#shapeR" fill="url(#cookieBase)"/>
+              <g clip-path="url(#clipR)">
+                <ellipse cx="60" cy="-18" rx="44" ry="36" fill="url(#cookieGlow)"/>
+                <use href="#shapeR" fill="none" stroke="#a8692f" stroke-width="18" opacity=".3" filter="url(#soft)"/>
+                <path d="M6 -60 C2 -30 2 0 8 26" fill="none" stroke="#97582a" stroke-width="40" opacity=".42" filter="url(#soft)"/>
+                <path d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68" fill="none" stroke="#f4d6a4" stroke-width="10" opacity=".6" filter="url(#soft2)"/>
+                <path d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68" transform="translate(-10 4)" fill="none" stroke="#b0703a" stroke-width="2.2" opacity=".45" filter="url(#soft2)"/>
+                <path d="M114 68 C80 52 36 38 8 26" fill="none" stroke="#a96a33" stroke-width="10" opacity=".5" filter="url(#soft2)"/>
+              </g>
+            </g>
+            <use href="#shapeR" fill="none" stroke="#bf8446" stroke-width="1" opacity=".5"/>
+          </svg>
+        </div>
+        <div class="half l">
+          <svg viewBox="-130 -100 260 200" aria-hidden="true">
+            <g class="tab">
+              <path d="M-86 52 L-122 92 L-104 104 L-70 62 Z" fill="#fbfaf5" stroke="#d9d3c6" stroke-width="1"/>
+              <path d="M-114 90 L-105 97" stroke="#2f55c2" stroke-width="5" opacity=".7"/>
+            </g>
+            <g filter="url(#bake)">
+              <use href="#shapeL" fill="url(#cookieBase)"/>
+              <g clip-path="url(#clipL)">
+                <ellipse cx="-44" cy="-16" rx="46" ry="40" fill="url(#cookieGlow)"/>
+                <use href="#shapeL" fill="none" stroke="#a8692f" stroke-width="18" opacity=".26" filter="url(#soft)"/>
+                <path d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60" fill="none" stroke="#f4d6a4" stroke-width="12" opacity=".65" filter="url(#soft2)"/>
+                <path d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60" transform="translate(11 5)" fill="none" stroke="#b0703a" stroke-width="2.2" opacity=".45" filter="url(#soft2)"/>
+                <path d="M6 -60 C2 -30 2 0 8 26" fill="none" stroke="#f7ddb0" stroke-width="4" opacity=".55" filter="url(#soft2)"/>
+                <path d="M-108 72 C-70 56 -20 40 8 26" fill="none" stroke="#a96a33" stroke-width="10" opacity=".45" filter="url(#soft2)"/>
+              </g>
+            </g>
+            <use href="#shapeL" fill="none" stroke="#bf8446" stroke-width="1" opacity=".5"/>
+          </svg>
+        </div>
+        <span class="crumb" style="--x:-7cqw"></span>
+        <span class="crumb" style="--x:5cqw; --d:.05s; --z:.7"></span>
+        <span class="crumb" style="--x:-2cqw; --d:.12s; --z:.5"></span>
+        <span class="crumb" style="--x:9cqw; --d:.08s; --z:1.2"></span>
+        <span class="crumb" style="--x:1cqw; --d:.15s; --z:.6"></span>
+        <span class="crumb" style="--x:-11cqw; --d:.03s; --z:.8"></span>
       </div>
     </div>
   </div>
 
-  <footer>
-    <p class="count">1<sup>*</sup> COOKIE</p>
-    <p class="net">NET WT. ABOUT ONE SMALL SMILE</p>
-    <p class="fine">*one at a time. there's no hurry.</p>
-  </footer>
+  <div class="slip" id="slip">
+    <span class="fold"></span>
+    <p class="msg" id="msg" aria-live="polite"></p>
+    <p class="keep">keep this one with you.</p>
+  </div>
+
+  <div class="actions">
+    <button class="another" id="another" type="button">another, please</button>
+    <button class="share" id="share" type="button">send this to someone</button>
+  </div>
+
+  <p class="hint" id="hint" aria-hidden="true">(tap the bag)</p>
 </main>
 
 <script src="fortunes.js"></script>
 <script>
-  const stage = document.getElementById("stage");
-  const cookie = document.getElementById("cookie");
-  const slip = document.getElementById("slip");
+  const scene = document.getElementById("scene");
   const msg = document.getElementById("msg");
+  const hint = document.getElementById("hint");
+  const hitBag = document.getElementById("hitBag");
+  const hitCookie = document.getElementById("hitCookie");
   const shareBtn = document.getElementById("share");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const shuffle = (a) => {
     for (let i = a.length - 1; i > 0; i--) {
@@ -342,7 +415,7 @@
     const h = now.getHours();
     if (now.getDay() === 0 && h >= 17) return "sundayEvening";
     if (h < 5) return "lateNight";
-    if (h >= 5 && h < 10) return "morning";
+    if (h < 10) return "morning";
     return null;
   }
 
@@ -355,38 +428,63 @@
     return deck.pop();
   }
 
+  function say(text) {
+    hint.classList.toggle("gone", !text);
+    if (text) hint.textContent = text;
+  }
+
   let busy = false;
 
-  cookie.addEventListener("click", () => {
-    if (busy || stage.classList.contains("open")) return;
-    busy = true;
-    msg.textContent = pick();
-    slip.classList.toggle("blue", Math.random() < 0.3);
-    cookie.setAttribute("aria-label", "The cookie is open");
-    stage.classList.add("lift");
-    setTimeout(() => stage.classList.add("pressing"), 500);
-    setTimeout(() => {
-      stage.classList.remove("pressing");
-      stage.classList.add("open");
-      busy = false;
-    }, 950);
-  });
-
-  document.getElementById("another").addEventListener("click", () => {
+  hitBag.addEventListener("click", async () => {
     if (busy) return;
     busy = true;
-    stage.classList.add("fade");
-    setTimeout(() => {
-      stage.classList.add("instant");
-      stage.classList.remove("open", "lift");
-      msg.textContent = "";
-      shareBtn.textContent = "send this to someone";
-      cookie.setAttribute("aria-label", "Open the fortune cookie");
-      void stage.offsetWidth;   // apply the reset before re-enabling transitions
-      stage.classList.remove("instant", "fade");
-      cookie.focus({ preventScroll: true });
-      busy = false;
-    }, 550);
+    hitBag.hidden = true;
+    say("");
+    scene.classList.add("wiggle");
+    await wait(350);
+    scene.classList.remove("wiggle");
+    if (!scene.classList.contains("opened")) {
+      scene.classList.add("opened");
+      await wait(800);
+    }
+    scene.classList.add("out");
+    await wait(950);
+    scene.classList.add("front");
+    await wait(900);
+    hitCookie.hidden = false;
+    hitCookie.focus({ preventScroll: true });
+    say("(now crack it open)");
+    busy = false;
+  });
+
+  hitCookie.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    hitCookie.hidden = true;
+    say("");
+    msg.textContent = pick();
+    scene.classList.add("pressing");
+    await wait(450);
+    scene.classList.remove("pressing");
+    scene.classList.add("cracked");
+    busy = false;
+  });
+
+  document.getElementById("another").addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    scene.classList.add("leaving");
+    await wait(550);
+    scene.classList.add("instant");
+    scene.classList.remove("out", "front", "cracked", "leaving");
+    msg.textContent = "";
+    shareBtn.textContent = "send this to someone";
+    void scene.offsetWidth;   // apply the reset before re-enabling transitions
+    scene.classList.remove("instant");
+    hitBag.hidden = false;
+    hitBag.focus({ preventScroll: true });
+    say("(there's more in the bag)");
+    busy = false;
   });
 
   shareBtn.addEventListener("click", async () => {
