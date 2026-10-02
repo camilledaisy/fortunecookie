@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fortune Cookie</title>
+<meta name="description" content="something small, just for you.">
+<meta name="theme-color" content="#f3ead5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f3ead5;
+    --paper: #fbf6ea;
+    --red: #c4493d;
+    --red-ink: #b23c31;
+    --blue: #48668a;
+    --gold: #e6b264;
+    --gold-dark: #d08f45;
+    --brown: #9b5a26;
+    --ink: #5a4636;
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E");
+    --cw: min(70vw, 300px);              /* cookie width */
+    --gap: 10px;                         /* cookie → slip */
+    --rest: 90px;                        /* cookie sits lower until opened */
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+    background: var(--cream) var(--noise);
+    color: var(--ink);
+    font-family: "Courier Prime", "Courier New", monospace;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* the printed label, like the front of an old cookie bag */
+  .label {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    padding: 28px 30px 22px;
+    border: 2px solid var(--red);
+    border-left-width: 13px;
+    border-right-width: 13px;
+    background: var(--paper) var(--noise);
+    text-align: center;
+    transform: rotate(-0.4deg);
+  }
+  .label::before {               /* thin inner rules beside the thick bands */
+    content: "";
+    position: absolute;
+    inset: 0 6px;
+    border-left: 1.5px solid var(--red);
+    border-right: 1.5px solid var(--red);
+    filter: url(#rough);
+    pointer-events: none;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.3rem, 11vw, 3.4rem);
+    line-height: .92;
+    letter-spacing: .03em;
+    color: var(--red);
+    text-shadow: 1.5px 1px 0 rgba(72, 102, 138, .22);   /* a little misregistration */
+    filter: url(#rough);
+  }
+  h1 span { display: block; }
+
+  .rule { display: block; width: 190px; max-width: 70%; margin: 10px auto 8px; color: var(--red); filter: url(#rough); }
+
+  .tagline { margin: 0; text-wrap: balance; font-style: italic; font-size: .98rem; opacity: .85; }
+
+  /* ---------- cookie ---------- */
+  .stage { margin-top: 18px; transition: opacity .5s ease; }
+  .stage.fade { opacity: 0; }
+  .stage.instant, .stage.instant * { transition: none !important; animation: none !important; }
+
+  .cookie {
+    display: block;
+    width: var(--cw);
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+  .cookie:focus-visible { outline: 2px dashed var(--blue); outline-offset: 6px; }
+  .cookie svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .cookie .art { filter: url(#rough); transform-box: view-box; transform-origin: 150px 176px; transition: transform .3s ease; }
+  .stage:not(.open) .cookie:hover .art { transform: translateY(-3px) rotate(-1deg); }
+
+  .half { transform-box: view-box; transform-origin: 150px 176px; transition: transform .9s cubic-bezier(.3,1.4,.5,1); }
+  .tab { transition: opacity .25s ease; }
+
+  .stage.pressing .art { animation: press .45s ease-in-out; }
+  @keyframes press {
+    0%   { transform: none; }
+    30%  { transform: scale(.97, .94) rotate(.8deg); }
+    55%  { transform: scale(.96, .93) rotate(-1deg); }
+    80%  { transform: scale(.985, .97) rotate(.4deg); }
+    100% { transform: none; }
+  }
+
+  .stage.open .left  { transform: translate(-30px, 6px) rotate(-17deg); }
+  .stage.open .right { transform: translate(32px, 9px) rotate(19deg); }
+  .stage.open .tab   { opacity: 0; }
+
+  .crumb { opacity: 0; transform-box: fill-box; }
+  .stage.open .crumb { animation: crumb 1.1s ease-in forwards; animation-delay: var(--d, 0s); }
+  @keyframes crumb {
+    0%   { opacity: 1; transform: translate(0, 0); }
+    100% { opacity: 0; transform: translate(var(--x), 70px) rotate(90deg); }
+  }
+
+  .cookie, .hint { transform: translateY(var(--rest)); transition: transform .5s ease, opacity .3s; }
+  .stage.lift .cookie, .stage.lift .hint { transform: none; }
+  .hint { margin: 6px 0 0; height: 14px; line-height: 14px; font-size: .75rem; letter-spacing: .08em; opacity: .55; transition: opacity .3s; }
+  .stage.open .hint { opacity: 0; }
+
+  /* ---------- the slip of paper ---------- */
+  .fortune { position: relative; z-index: 2; margin-top: var(--gap); }
+
+  .slip {
+    position: relative;
+    width: min(100%, 360px);
+    min-height: 104px;
+    margin: 0 auto;
+    padding: 22px 22px;
+    display: grid;
+    place-items: center;
+    background: #fffdf6 var(--noise);
+    box-shadow: 0 1px 2px rgba(90, 60, 30, .18), 0 6px 14px -8px rgba(90, 60, 30, .3);
+    transform-origin: 50% 0;
+    /* tucked inside the cookie: thin, centred on the crack, clipped to nothing */
+    transform: translateY(calc(var(--cw) * -0.3 - var(--gap) - 10px)) scaleY(.22) rotate(-1.5deg);
+    clip-path: inset(0 50% 0 50%);
+    opacity: 0;
+    transition: opacity .2s ease, clip-path 1.1s cubic-bezier(.25,.6,.3,1), transform .9s cubic-bezier(.4,0,.2,1);
+  }
+  .slip::before {                /* printed rules, top and bottom */
+    content: "";
+    position: absolute;
+    inset: 7px 10px;
+    border-top: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    opacity: .35;
+  }
+  .slip { color: var(--red-ink); }
+  .slip.blue { color: var(--blue); }
+
+  .msg {
+    margin: 0;
+    font-size: 1.06rem;
+    line-height: 1.45;
+    text-wrap: balance;
+    text-shadow: 0 0 .6px currentColor;   /* a touch of ink bleed */
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  .keep { margin: 12px 0 0; font-size: .74rem; font-style: italic; opacity: 0; transition: opacity 1s ease; }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px 18px;
+    margin-top: 18px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.2s ease, visibility 0s 1.2s;
+  }
+  .actions button {
+    font: inherit;
+    color: var(--red);
+    background: none;
+    border: 0;
+    padding: 8px 4px;
+    cursor: pointer;
+  }
+  .another {
+    font-size: .95rem !important;
+    border: 1.5px solid var(--red) !important;
+    padding: 7px 14px !important;
+    transform: rotate(-0.8deg);
+  }
+  .another:hover, .another:focus-visible { background: rgba(196, 73, 61, .07) !important; }
+  .share { font-size: .78rem !important; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; opacity: .85; }
+  .actions button:focus-visible { outline: 2px dashed var(--blue); outline-offset: 3px; }
+
+  /* the reveal, in order: slide out, drop down + unfold, ink appears, then the rest */
+  .stage.open .slip {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: none;
+    transition-delay: .35s, .4s, 1.7s;
+  }
+  .stage.open .msg     { opacity: 1; transition-delay: 2.5s; }
+  .stage.open .keep    { opacity: .7; transition-delay: 3.4s; }
+  .stage.open .actions { opacity: 1; visibility: visible; transition: opacity 1.2s ease 4.6s, visibility 0s 4.6s; }
+
+  /* ---------- the back of the bag ---------- */
+  footer { margin-top: 26px; color: var(--red); line-height: 1.15; }
+  .count { margin: 0; font-family: "Josefin Sans", sans-serif; font-weight: 700; font-size: 1.15rem; letter-spacing: .06em; filter: url(#rough); }
+  .count sup { font-size: .6em; }
+  .net { margin: 2px 0 0; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: .68rem; letter-spacing: .08em; }
+  .fine { margin: 8px 0 0; font-size: .66rem; color: var(--ink); opacity: .6; }
+
+  @media (max-height: 640px) {
+    .label { padding-top: 18px; }
+    .stage { margin-top: 10px; }
+    footer { margin-top: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage.pressing .art, .stage.open .crumb { animation: none; }
+    .half, .cookie, .hint { transition-duration: .01s; }
+    .slip { transform: none; clip-path: none; transition: opacity .8s ease; }
+    .stage.open .slip { transition-delay: .2s; }
+    .stage.open .msg { transition-delay: .6s; }
+    .stage.open .keep { transition-delay: 1s; }
+    .stage.open .actions { transition: opacity .8s ease 1.8s, visibility 0s 1.8s; }
+  }
+</style>
+</head>
+<body>
+
+<!-- slightly wobbly printing -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough">
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
+    <feDisplacementMap in="SourceGraphic" scale="2.2"/>
+  </filter>
+  <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+    <circle cx="2" cy="2" r="1.2" fill="#b8742f" opacity=".45"/>
+  </pattern>
+</svg>
+
+<main class="label">
+  <h1><span>Fortune</span><span>Cookie</span></h1>
+  <svg class="rule" viewBox="0 0 190 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6">
+    <path d="M0 8H80M110 8H190M80 8V3H110V8M86 3V12H104V3M92 12V8H98V12"/>
+  </svg>
+  <p class="tagline">something small, just for you.</p>
+
+  <div class="stage" id="stage">
+    <button class="cookie" id="cookie" type="button" aria-label="Open the fortune cookie">
+      <svg viewBox="0 0 300 200" aria-hidden="true">
+        <g class="art" stroke="#9b5a26" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+          <!-- the little paper tab peeking out -->
+          <g class="tab">
+            <path d="M52 160 L36 194 L62 200 L76 164 Z" fill="#fffdf6" stroke="#c9b9a0" stroke-width="1.5"/>
+            <rect x="47" y="180" width="11" height="11" fill="none" stroke="#c4493d" stroke-width="1.5" transform="rotate(18 52 186)"/>
+          </g>
+
+          <g class="half left">
+            <path d="M150 46 C122 30 76 44 54 82 C38 110 30 144 32 168 C66 158 114 162 150 178 C162 140 162 88 150 46 Z" fill="#e6b264"/>
+            <path d="M32 168 C62 146 112 146 146 160 L150 178 C114 162 66 158 32 168 Z" fill="#d08f45"/>
+            <path d="M32 168 C62 146 112 146 146 160 L150 178 C114 162 66 158 32 168 Z" fill="url(#dots)" stroke="none"/>
+            <path d="M126 52 C112 80 112 120 124 152" fill="none" stroke-width="1.8" opacity=".45"/>
+            <path d="M70 70 C84 52 104 44 122 44" fill="none" stroke="#f7dca6" stroke-width="5" opacity=".9"/>
+            <circle cx="86" cy="100" r="1.6" fill="#c98a43" stroke="none"/>
+            <circle cx="100" cy="122" r="1.2" fill="#c98a43" stroke="none"/>
+            <circle cx="70" cy="128" r="1.4" fill="#c98a43" stroke="none"/>
+          </g>
+
+          <g class="half right">
+            <path d="M150 46 C180 32 226 48 248 88 C262 114 270 146 268 166 C234 158 186 162 150 178 C140 140 140 88 150 46 Z" fill="#e6b264"/>
+            <path d="M268 166 C238 146 188 146 154 160 L150 178 C186 162 234 158 268 166 Z" fill="#d08f45"/>
+            <path d="M268 166 C238 146 188 146 154 160 L150 178 C186 162 234 158 268 166 Z" fill="url(#dots)" stroke="none"/>
+            <path d="M174 54 C188 82 188 120 176 152" fill="none" stroke-width="1.8" opacity=".45"/>
+            <path d="M180 46 C200 44 220 54 234 70" fill="none" stroke="#f7dca6" stroke-width="5" opacity=".9"/>
+            <circle cx="212" cy="98" r="1.5" fill="#c98a43" stroke="none"/>
+            <circle cx="226" cy="122" r="1.2" fill="#c98a43" stroke="none"/>
+            <circle cx="198" cy="128" r="1.6" fill="#c98a43" stroke="none"/>
+          </g>
+
+          <g stroke="none" fill="#d9a055">
+            <circle class="crumb" cx="148" cy="174" r="3"   style="--x:-26px"/>
+            <circle class="crumb" cx="153" cy="172" r="2.2" style="--x:18px; --d:.05s"/>
+            <circle class="crumb" cx="145" cy="178" r="1.6" style="--x:-8px; --d:.12s"/>
+            <circle class="crumb" cx="156" cy="178" r="2.6" style="--x:30px; --d:.08s"/>
+            <circle class="crumb" cx="150" cy="168" r="1.4" style="--x:4px; --d:.15s"/>
+            <circle class="crumb" cx="142" cy="172" r="2"   style="--x:-40px; --d:.03s"/>
+          </g>
+        </g>
+      </svg>
+    </button>
+    <p class="hint" aria-hidden="true">(tap the cookie)</p>
+
+    <div class="fortune">
+      <div class="slip" id="slip"><p class="msg" id="msg" aria-live="polite"></p></div>
+      <p class="keep">keep this one with you.</p>
+      <div class="actions">
+        <button class="another" id="another" type="button">another, please</button>
+        <button class="share" id="share" type="button">send this to someone</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p class="count">1<sup>*</sup> COOKIE</p>
+    <p class="net">NET WT. ABOUT ONE SMALL SMILE</p>
+    <p class="fine">*one at a time. there's no hurry.</p>
+  </footer>
+</main>
+
+<script src="fortunes.js"></script>
+<script>
+  const stage = document.getElementById("stage");
+  const cookie = document.getElementById("cookie");
+  const slip = document.getElementById("slip");
+  const msg = document.getElementById("msg");
+  const shareBtn = document.getElementById("share");
+
+  const shuffle = (a) => {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  // A shuffled deck, so nothing repeats until everything has been seen.
+  let deck = [];
+  const timely = Object.fromEntries(Object.entries(TIMELY).map(([k, v]) => [k, shuffle([...v])]));
+  let opened = 0;
+
+  function timeOfDay(now = new Date()) {
+    const h = now.getHours();
+    if (now.getDay() === 0 && h >= 17) return "sundayEvening";
+    if (h < 5) return "lateNight";
+    if (h >= 5 && h < 10) return "morning";
+    return null;
+  }
+
+  function pick() {
+    opened++;
+    if (opened === 7) return ENOUGH;
+    const pool = timely[timeOfDay()];
+    if (pool && pool.length && Math.random() < 0.3) return pool.pop();
+    if (!deck.length) deck = shuffle(Object.values(FORTUNES).flat());
+    return deck.pop();
+  }
+
+  let busy = false;
+
+  cookie.addEventListener("click", () => {
+    if (busy || stage.classList.contains("open")) return;
+    busy = true;
+    msg.textContent = pick();
+    slip.classList.toggle("blue", Math.random() < 0.3);
+    cookie.setAttribute("aria-label", "The cookie is open");
+    stage.classList.add("lift");
+    setTimeout(() => stage.classList.add("pressing"), 500);
+    setTimeout(() => {
+      stage.classList.remove("pressing");
+      stage.classList.add("open");
+      busy = false;
+    }, 950);
+  });
+
+  document.getElementById("another").addEventListener("click", () => {
+    if (busy) return;
+    busy = true;
+    stage.classList.add("fade");
+    setTimeout(() => {
+      stage.classList.add("instant");
+      stage.classList.remove("open", "lift");
+      msg.textContent = "";
+      shareBtn.textContent = "send this to someone";
+      cookie.setAttribute("aria-label", "Open the fortune cookie");
+      void stage.offsetWidth;   // apply the reset before re-enabling transitions
+      stage.classList.remove("instant", "fade");
+      cookie.focus({ preventScroll: true });
+      busy = false;
+    }, 550);
+  });
+
+  shareBtn.addEventListener("click", async () => {
+    const text = `“${msg.textContent}”\n— from a fortune cookie, thought of you`;
+    const url = location.protocol.startsWith("http") ? location.href : "";
+    if (navigator.share) {
+      try { await navigator.share({ text, url: url || undefined }); } catch (e) { /* closed the sheet */ }
+      return;
+    }
+    const full = url ? `${text}\n${url}` : text;
+    try {
+      await navigator.clipboard.writeText(full);
+      shareBtn.textContent = "copied. go send it.";
+    } catch (e) {
+      window.prompt("copy this and send it:", full);
+    }
+  });
+</script>
+</body>
+</html>
