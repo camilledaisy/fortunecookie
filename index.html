@@ -52,18 +52,18 @@
   }
 
   /* ---------- the bag ---------- */
-  .bag { position: absolute; inset: 0; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 93%; }
+  .bag { position: absolute; inset: 0; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 93%; will-change: transform; }
   .scene.front .bag { opacity: .12; }
-  .scene.shake .bag { animation: shake .75s cubic-bezier(.36,.07,.19,.97); }
+  /* rocks on its base: six eased swings, each a little smaller, then settles */
+  .scene.shake .bag { animation: shake .8s ease-in-out; }
   @keyframes shake {
     0%, 100% { transform: none; }
-    10% { transform: translate(-2.5cqw, -.6cqw) rotate(-7deg); }
-    22% { transform: translate(2.8cqw, -1.2cqw) rotate(8deg); }
-    34% { transform: translate(-2.6cqw, -.4cqw) rotate(-7deg); }
-    46% { transform: translate(2.2cqw, -1cqw) rotate(6deg); }
-    58% { transform: translate(-1.6cqw, 0) rotate(-4deg); }
-    70% { transform: translate(1.2cqw, -.4cqw) rotate(3deg); }
-    82% { transform: translate(-.6cqw, 0) rotate(-1.5deg); }
+    12% { transform: translateX(-1.4cqw) rotate(-7deg); }
+    28% { transform: translateX(1.3cqw) rotate(6.5deg); }
+    44% { transform: translateX(-1.1cqw) rotate(-5.5deg); }
+    60% { transform: translateX(.8cqw) rotate(4deg); }
+    76% { transform: translateX(-.5cqw) rotate(-2.5deg); }
+    90% { transform: translateX(.2cqw) rotate(1deg); }
   }
   .hit-bag:hover ~ .bag { transform: translateY(-.6cqw); }
 
@@ -333,11 +333,12 @@
     };
     const play = {
       shake() {
-        for (let i = 0; i < 7; i++) {
-          const t = i * 0.1 + Math.random() * 0.02;
-          hiss(t, 0.09, 0.22, "bandpass", 2600 + Math.random() * 1400, 0.8);            // paper
-          if (i % 2 === 0) hiss(t + 0.03, 0.035, 0.18, "bandpass", 900 + Math.random() * 300, 4);  // cookie knocking about
-        }
+        // one rustle per swing of the bag (see @keyframes shake), fading as it settles
+        [0.1, 0.22, 0.35, 0.48, 0.61, 0.72].forEach((t, i) => {
+          const k = 1 - i * 0.14;
+          hiss(t, 0.11, 0.22 * k, "bandpass", 2600 + Math.random() * 1400, 0.8);            // paper
+          hiss(t + 0.03, 0.035, 0.18 * k, "bandpass", 900 + Math.random() * 300, 4);        // cookie knocking about
+        });
       },
       pop() { blip(0, 260, 880, 0.13, 0.25); hiss(0, 0.05, 0.15, "highpass", 3000); },
       crack() {
@@ -411,7 +412,7 @@
     say("");
     sfx.play("shake");
     scene.classList.add("shake");
-    await wait(750);
+    await wait(800);
     scene.classList.remove("shake");
     if (!left()) {   // nothing left in the bag today
       hitBag.hidden = false;
