@@ -43,28 +43,22 @@
   /* ---------- the bag ---------- */
   .bag { position: absolute; inset: 0; transition: opacity .9s ease, transform .3s ease; transform-origin: 50% 93%; }
   .scene.front .bag { opacity: .12; }
-  .scene.wiggle .bag { animation: wiggle .35s ease-in-out; }
-  @keyframes wiggle {
+  .scene.shake .bag { animation: shake .75s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes shake {
     0%, 100% { transform: none; }
-    30% { transform: rotate(-1.2deg) scaleY(.99); }
-    65% { transform: rotate(.9deg); }
+    10% { transform: translate(-2.5cqw, -.6cqw) rotate(-7deg); }
+    22% { transform: translate(2.8cqw, -1.2cqw) rotate(8deg); }
+    34% { transform: translate(-2.6cqw, -.4cqw) rotate(-7deg); }
+    46% { transform: translate(2.2cqw, -1cqw) rotate(6deg); }
+    58% { transform: translate(-1.6cqw, 0) rotate(-4deg); }
+    70% { transform: translate(1.2cqw, -.4cqw) rotate(3deg); }
+    82% { transform: translate(-.6cqw, 0) rotate(-1.5deg); }
   }
   .hit-bag:hover ~ .bag { transform: translateY(-.6cqw); }
 
   .bag img { position: absolute; left: 17.5%; width: 65%; height: auto; display: block; user-select: none; -webkit-user-drag: none; }
   .bag .front-img { top: 24.875%; }
-  .bag .band { top: 17.19%; z-index: 1; transform-origin: 50% 100%; transition: transform .6s ease-in, opacity .3s ease .3s; }
-  .scene.opened .band { transform: perspective(300px) rotateX(75deg) translateY(-10%); opacity: 0; }
-
-  /* the inside back wall, seen once the fold is lifted */
-  .bag .inside {
-    position: absolute; left: 19%; width: 62%; top: 23.2%; height: 2.6%;
-    background: radial-gradient(60% 120% at 50% 100%, #5c4f40, #8f816d 55%, #e6e1d8 100%);
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    transform: scaleY(0); transform-origin: 50% 100%;
-    transition: transform .5s cubic-bezier(.3,1.3,.5,1) .35s;
-  }
-  .scene.opened .inside { transform: none; }
+  .bag .band { top: 17.19%; z-index: 1; }
   /* my own seal, printed where the brand logo was */
   .bag .seal {
     position: absolute; left: 49.21%; top: 43.71%; width: 13.6%;
@@ -78,19 +72,19 @@
   }
 
   /* ---------- the cookie ---------- */
-  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 0 75.12% 0); }   /* hidden below the bag's front edge */
+  .mouth { position: absolute; inset: 0; pointer-events: none; clip-path: inset(0 0 82.5% 0); }   /* hidden below the top of the bag */
   .scene.front .mouth { clip-path: none; }
 
   .cookie {
-    --cy: 270; --s: .75;
+    --cy: 270; --s: .7; --r: 0deg;
     position: absolute; left: 0; top: 0;
     width: 52cqw; aspect-ratio: 301 / 293;
-    transform: translate(calc(200 * .25cqw - 26cqw), calc(var(--cy) * .25cqw - 25.31cqw)) scale(var(--s));
+    transform: translate(calc(200 * .25cqw - 26cqw), calc(var(--cy) * .25cqw - 25.31cqw)) scale(var(--s)) rotate(var(--r));
     transition: transform .9s cubic-bezier(.35,.1,.25,1), opacity .5s ease;
     will-change: transform;
   }
-  .scene.out .cookie   { --cy: 99; }
-  .scene.front .cookie { --cy: 205; --s: 1.15; }
+  .scene.out .cookie   { --cy: 50; --r: -14deg; transition: transform .45s cubic-bezier(.2,1.5,.45,1); }
+  .scene.front .cookie { --cy: 205; --s: 1.15; --r: 0deg; transition: transform .8s cubic-bezier(.3,1.25,.5,1), opacity .5s ease; }
   .scene.leaving .cookie { opacity: 0; }
 
   .body { position: absolute; inset: 0; }
@@ -216,8 +210,7 @@
 
   <div class="bag" aria-hidden="true">
     <span class="ground"></span>
-    <span class="inside"></span>
-    <img class="front-img" src="img/bag-body.png" alt="" width="412" height="692">
+        <img class="front-img" src="img/bag-body.png" alt="" width="412" height="692">
     <svg class="seal" viewBox="-50 -50 100 100">
       <g fill="#d65f62" font-family="Montserrat, Gotham, 'Helvetica Neue', Arial, sans-serif" font-weight="700" text-anchor="middle">
         <circle r="46" fill="none" stroke="#d65f62" stroke-width="3"/>
@@ -324,15 +317,11 @@
     busy = true;
     hitBag.hidden = true;
     say("");
-    scene.classList.add("wiggle");
-    await wait(350);
-    scene.classList.remove("wiggle");
-    if (!scene.classList.contains("opened")) {
-      scene.classList.add("opened");
-      await wait(800);
-    }
+    scene.classList.add("shake");
+    await wait(750);
+    scene.classList.remove("shake");
     scene.classList.add("out");
-    await wait(950);
+    await wait(500);
     scene.classList.add("front");
     await wait(900);
     hitCookie.hidden = false;
