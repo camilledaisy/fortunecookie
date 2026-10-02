@@ -106,8 +106,8 @@
     80% { transform: scale(.985, .97) rotate(.4deg); }
   }
 
-  .body { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(70, 45, 20, .22)); }
   .whole, .half { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+  .whole, .half { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(70, 45, 20, .22)); }
   .whole { z-index: 3; }
   .scene.cracked .whole { opacity: 0; }
   /* the front half (with its curled bottom) and the back half it snaps off from */
@@ -162,19 +162,22 @@
   .lucky { margin-top: 1.2cqw; font-size: 2.9cqw; }
   .keep { margin-top: 1cqw; font-size: 2.4cqw; font-style: italic; }
 
-  .scene.cracked .slip { animation: slip-out 1.4s cubic-bezier(.45,.05,.25,1) .15s both; }
-  .scene.cracked .pl   { animation: unfold 1.4s ease-in-out .15s both; }
+  .slip { will-change: translate, rotate, scale; }
+  .pl { will-change: transform; }
+  .scene.cracked .slip { animation: slip-out 1.4s cubic-bezier(.45, 0, .2, 1) .15s both; }
+  .scene.cracked .pl   { animation: unfold 1.4s linear .15s both; }
+  /* one continuous move (translate/rotate/scale each eased once), and a single swap in
+     front of the cookie once it's clear of the crack */
   @keyframes slip-out {
-    0%   { opacity: 0; z-index: 2; transform: translate(-1.8cqw, -46.3cqw) rotate(62deg) scale(.36); }
-    8%   { opacity: 1; }
-    34%  { z-index: 2; transform: translate(-1.4cqw, -33cqw) rotate(28deg) scale(.46); }
-    48%  { z-index: 5; transform: translate(-.4cqw, -17cqw) rotate(-5deg) scale(.62); }
-    76%  { opacity: 1; z-index: 5; transform: rotate(-1.6deg); }
-    100% { opacity: 1; z-index: 5; transform: rotate(-1.2deg); }
+    0%   { opacity: 0; z-index: 2; translate: -1.8cqw -46.3cqw; rotate: 62deg; scale: .36; }
+    12%  { opacity: 1; }
+    34%  { z-index: 2; }
+    35%  { z-index: 5; }
+    100% { opacity: 1; z-index: 5; translate: 0 0; rotate: -1.2deg; scale: 1; }
   }
   @keyframes unfold {
-    0%, 58% { transform: rotateY(-172deg); filter: brightness(.8); }
-    88%, 100% { transform: none; filter: none; }
+    0%, 50% { transform: rotateY(-172deg); animation-timing-function: cubic-bezier(.45, 0, .25, 1); }
+    92%, 100% { transform: none; }
   }
   .scene.cracked .msg  { opacity: .92; transition: opacity .7s ease 1.35s; }
   .scene.cracked .lucky { opacity: .9; transition: opacity .7s ease 1.55s; }
@@ -439,7 +442,7 @@
     scene.classList.add("cracked");
     sfx.play("crack");
     sfx.play("slip");
-    setTimeout(() => sfx.play("unfold"), 950);
+    setTimeout(() => sfx.play("unfold"), 850);
     busy = false;
   });
 
