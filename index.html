@@ -88,7 +88,7 @@
   .scene.leaving .cookie { opacity: 0; }
 
   .body { position: absolute; inset: 0; }
-  .scene.pressing .body { animation: press .45s ease-in-out; }
+  .scene.pressing .body { animation: press .35s ease-in-out; }
   @keyframes press {
     30% { transform: scale(.97, .94) rotate(.8deg); }
     55% { transform: scale(.96, .93) rotate(-1deg); }
@@ -100,7 +100,7 @@
   .whole { z-index: 3; }
   .scene.cracked .whole { opacity: 0; }
   /* the front half (with its curled bottom) and the back half it snaps off from */
-  .half { opacity: 0; transition: transform .9s cubic-bezier(.3,1.3,.5,1); will-change: transform; }
+  .half { opacity: 0; transition: transform .7s cubic-bezier(.3,1.3,.5,1); will-change: transform; }
   .scene.cracked .half { opacity: 1; }
   .l { z-index: 3; transform-origin: 40% 90%; }
   .r { z-index: 1; transform-origin: 70% 75%; }
@@ -150,8 +150,8 @@
   .msg  { font-size: 3.9cqw; line-height: 1.3; text-wrap: balance; }
   .keep { margin-top: 1.4cqw; font-size: 2.6cqw; }
 
-  .scene.cracked .slip { animation: slip-out 2.4s cubic-bezier(.45,.05,.25,1) .35s both; }
-  .scene.cracked .pl   { animation: unfold 2.4s ease-in-out .35s both; }
+  .scene.cracked .slip { animation: slip-out 1.4s cubic-bezier(.45,.05,.25,1) .15s both; }
+  .scene.cracked .pl   { animation: unfold 1.4s ease-in-out .15s both; }
   @keyframes slip-out {
     0%   { opacity: 0; z-index: 2; transform: translate(-1.8cqw, -46.3cqw) rotate(62deg) scale(.36); }
     8%   { opacity: 1; }
@@ -164,8 +164,8 @@
     0%, 58% { transform: rotateY(-172deg); filter: brightness(.8); }
     88%, 100% { transform: none; filter: none; }
   }
-  .scene.cracked .msg  { opacity: .92; transition-delay: 2.5s; }
-  .scene.cracked .keep { opacity: .85; transition-delay: 3.2s; }
+  .scene.cracked .msg  { opacity: .92; transition: opacity .7s ease 1.35s; }
+  .scene.cracked .keep { opacity: .85; transition: opacity .7s ease 1.75s; }
 
   /* ---------- buttons ---------- */
   .actions {
@@ -175,7 +175,7 @@
     transition: opacity 1.2s ease, visibility 0s 1.2s;
     z-index: 3;
   }
-  .scene.cracked .actions { opacity: 1; visibility: visible; transition: opacity 1.2s ease 4.4s, visibility 0s 4.4s; }
+  .scene.cracked .actions { opacity: 1; visibility: visible; transition: opacity .8s ease 2s, visibility 0s 2s; }
   .scene.leaving .actions { opacity: 0; transition: opacity .3s ease; }
   .actions button { font: inherit; color: var(--red); background: none; border: 0; cursor: pointer; padding: 2cqw 1.5cqw; }
   .another { font-size: max(15px, 4.2cqw) !important; border: 1.5px solid var(--red) !important; padding: 1.8cqw 4cqw !important; background: #fbf8f0 !important; transform: rotate(-.8deg); }
@@ -192,6 +192,13 @@
   .hint { position: absolute; left: 0; right: 0; top: 95.2%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
   .hint.gone { opacity: 0; }
 
+  .sound {
+    position: fixed; top: max(10px, env(safe-area-inset-top)); right: 12px; z-index: 10;
+    font: 500 11px/1 Montserrat, Arial, sans-serif; letter-spacing: .06em;
+    color: #8a7a6a; background: none; border: 0; padding: 8px; cursor: pointer; opacity: .7;
+  }
+  .sound:hover { opacity: 1; }
+
   .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .pl, .scene.instant .msg,
   .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb {
     transition: none !important; animation: none !important;
@@ -203,6 +210,8 @@
 </style>
 </head>
 <body>
+
+<button class="sound" id="sound" type="button" aria-pressed="true">sound: on</button>
 
 <main class="scene" id="scene">
   <button class="hit hit-bag" id="hitBag" type="button" aria-label="Take a fortune cookie from the bag"></button>
@@ -266,6 +275,70 @@
 
 <script src="fortunes.js"></script>
 <script>
+  // Little paper-and-cookie sounds, synthesised with Web Audio (no files to load).
+  const sfx = (() => {
+    let ctx, noise, on = true;
+    try { on = localStorage.getItem("fc-sound") !== "off"; } catch (e) {}
+    const ac = () => {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        const d = noise.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    };
+    const env = (g, t, peak, attack, dur) => {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    };
+    // filtered noise burst: rustles, crunches, slides
+    const hiss = (at, dur, peak, type, freq, q = 1, attack = 0.004) => {
+      const c = ac(), t = c.currentTime + at;
+      const src = c.createBufferSource(); src.buffer = noise;
+      const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = c.createGain(); env(g, t, peak, attack, dur);
+      src.connect(f).connect(g).connect(c.destination);
+      src.start(t, Math.random() * 0.5, dur + 0.05);
+    };
+    // pitched blip: pops and thumps
+    const blip = (at, f0, f1, dur, peak, type = "sine") => {
+      const c = ac(), t = c.currentTime + at;
+      const o = c.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = c.createGain(); env(g, t, peak, 0.005, dur);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur + 0.05);
+    };
+    const play = {
+      shake() {
+        for (let i = 0; i < 7; i++) {
+          const t = i * 0.1 + Math.random() * 0.02;
+          hiss(t, 0.09, 0.22, "bandpass", 2600 + Math.random() * 1400, 0.8);            // paper
+          if (i % 2 === 0) hiss(t + 0.03, 0.035, 0.18, "bandpass", 900 + Math.random() * 300, 4);  // cookie knocking about
+        }
+      },
+      pop() { blip(0, 260, 880, 0.13, 0.25); hiss(0, 0.05, 0.15, "highpass", 3000); },
+      crack() {
+        let t = 0;
+        for (let i = 0; i < 5; i++) {
+          hiss(t, 0.03 + Math.random() * 0.04, 0.5 - i * 0.07, "bandpass", 1800 + Math.random() * 1800, 0.9, 0.002);
+          t += 0.015 + Math.random() * 0.03;
+        }
+        blip(0, 190, 90, 0.05, 0.2, "triangle");
+      },
+      slip() { hiss(0.15, 0.5, 0.07, "highpass", 3200, 0.7, 0.15); },
+      unfold() { hiss(0, 0.06, 0.12, "bandpass", 5200, 1.2); hiss(0.08, 0.05, 0.08, "bandpass", 4200, 1.2); },
+    };
+    return {
+      get on() { return on; },
+      set on(v) { on = v; try { localStorage.setItem("fc-sound", v ? "on" : "off"); } catch (e) {} },
+      play(name) { if (!on) return; try { play[name](); } catch (e) { /* no audio here */ } },
+    };
+  })();
+</script>
+<script>
   const scene = document.getElementById("scene");
   const msg = document.getElementById("msg");
   const setMsg = (t) => document.querySelectorAll(".msg").forEach((m) => { m.textContent = t; });
@@ -317,9 +390,11 @@
     busy = true;
     hitBag.hidden = true;
     say("");
+    sfx.play("shake");
     scene.classList.add("shake");
     await wait(750);
     scene.classList.remove("shake");
+    sfx.play("pop");
     scene.classList.add("out");
     await wait(500);
     scene.classList.add("front");
@@ -337,9 +412,12 @@
     say("");
     setMsg(pick());
     scene.classList.add("pressing");
-    await wait(450);
+    await wait(350);
     scene.classList.remove("pressing");
     scene.classList.add("cracked");
+    sfx.play("crack");
+    sfx.play("slip");
+    setTimeout(() => sfx.play("unfold"), 950);
     busy = false;
   });
 
@@ -359,6 +437,11 @@
     say("(there's more in the bag)");
     busy = false;
   });
+
+  const soundBtn = document.getElementById("sound");
+  const showSound = () => { soundBtn.textContent = `sound: ${sfx.on ? "on" : "off"}`; soundBtn.setAttribute("aria-pressed", String(sfx.on)); };
+  showSound();
+  soundBtn.addEventListener("click", () => { sfx.on = !sfx.on; showSound(); });
 
   shareBtn.addEventListener("click", async () => {
     const text = `“${msg.textContent}”\n— from a fortune cookie, thought of you`;
