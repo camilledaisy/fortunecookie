@@ -39,4 +39,17 @@ for name, m in (('front', front), ('back', back)):
         rim = ImageChops.multiply(rim.filter(ImageFilter.GaussianBlur(1)), piece.getchannel('A'))
         light = Image.new('RGBA', (W, H), (246, 214, 160, 255)); light.putalpha(rim)
         piece = Image.alpha_composite(piece, light)
+    if name == 'front':
+        # trim any shell shadow left along the front half's broken edge
+        px = piece.load()
+        ex = dict((int(y), x) for x, y in dense(front_edge, 1))
+        cut = Image.new('L', (W, H), 255); cp = cut.load()
+        for y in range(H):
+            e = ex.get(y)
+            if e is None: continue
+            for x in range(max(0, int(e) - 9), min(W, int(e) + 2)):
+                r, g, b, al = px[x, y]
+                if al and (r + g + b) / 3 < 125: cp[x, y] = 0
+        cut = cut.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(.7))
+        piece.putalpha(ImageChops.multiply(piece.getchannel('A'), cut))
     piece.save(f'cookie-{name}.png', optimize=True)
