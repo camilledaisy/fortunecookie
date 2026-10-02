@@ -42,7 +42,20 @@ while q:
     if x<W-1: q.append((x+1,y))
     if y>0: q.append((x,y-1))
     if y<H-1: q.append((x,y+1))
-alpha=alpha.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(.8))
+# pull the edge in past the photo's grey outline, softly
+alpha=alpha.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(.8))
+
+# 2b. lift the greyish paper to white; coloured ink (red label, tan band) is left mostly alone
+for y in range(H):
+    for x in range(W):
+        r,g,b=px[x,y]; mx=max(r,g,b); sat=(mx-min(r,g,b))/max(mx,1)
+        k=1+0.19*max(0.0,1-sat*5)
+        px[x,y]=(min(255,int(r*k)),min(255,int(g*k)),min(255,int(b*k)))
+
+# edge pixels take the lightest nearby colour so no grey fringe shows against the page
+lightest=im.filter(ImageFilter.MaxFilter(5))
+edge=alpha.point(lambda v:255 if 0<v<250 else 0)
+im=Image.composite(lightest,im,edge)
 rgba=im.copy(); rgba.putalpha(alpha)
 
 # 3. crop and split at the bottom of the folded band
