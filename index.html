@@ -78,13 +78,13 @@
   .cookie {
     --cy: 270; --s: .75;
     position: absolute; left: 0; top: 0;
-    width: 60cqw; aspect-ratio: 260 / 200;
-    transform: translate(calc(200 * .25cqw - 30cqw), calc(var(--cy) * .25cqw - 23.08cqw)) scale(var(--s));
+    width: 52cqw; aspect-ratio: 301 / 293;
+    transform: translate(calc(200 * .25cqw - 26cqw), calc(var(--cy) * .25cqw - 25.31cqw)) scale(var(--s));
     transition: transform .9s cubic-bezier(.35,.1,.25,1), opacity .5s ease;
     will-change: transform;
   }
-  .scene.out .cookie   { --cy: 89; }
-  .scene.front .cookie { --cy: 215; --s: 1.15; }
+  .scene.out .cookie   { --cy: 99; }
+  .scene.front .cookie { --cy: 205; --s: 1.15; }
   .scene.leaving .cookie { opacity: 0; }
 
   .body { position: absolute; inset: 0; }
@@ -95,15 +95,17 @@
     80% { transform: scale(.985, .97) rotate(.4deg); }
   }
 
-  .half { position: absolute; inset: 0; transform-origin: 50% 63%; transition: transform .9s cubic-bezier(.3,1.4,.5,1); will-change: transform; }
-  .half svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .scene.cracked .l { transform: translate(-13%, 4%) rotate(-17deg); }
-  .scene.cracked .r { transform: translate(14%, 6%) rotate(19deg); }
-  .tab { transition: opacity .25s; }
-  .scene.cracked .tab { opacity: 0; }
+  .body { filter: drop-shadow(0 1.4cqw 1.6cqw rgba(70, 45, 20, .22)); }
+  /* one photo, cut along the crease with a jagged break */
+  .half { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.3,1.4,.5,1); will-change: transform; }
+  .half img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+  .l { clip-path: polygon(0 0, 30.6% 0.0%, 32.2% 5.5%, 34.2% 11.6%, 37.2% 17.1%, 38.9% 23.9%, 41.9% 29.4%, 43.5% 35.5%, 46.5% 41.0%, 48.5% 47.1%, 52.5% 51.2%, 54.5% 57.0%, 58.5% 60.8%, 60.1% 67.2%, 63.5% 72.4%, 64.1% 78.8%, 66.8% 84.0%, 67.4% 90.4%, 70.1% 95.2%, 70.4% 100.0%, 0 100%); transform-origin: 40% 85%; }
+  .r { clip-path: polygon(100% 0, 100% 100%, 69.8% 100.0%, 69.5% 95.2%, 66.8% 90.4%, 66.2% 84.0%, 63.5% 78.8%, 62.9% 72.4%, 59.5% 67.2%, 57.9% 60.8%, 53.9% 57.0%, 51.9% 51.2%, 47.9% 47.1%, 45.9% 41.0%, 42.9% 35.5%, 41.3% 29.4%, 38.3% 23.9%, 36.6% 17.1%, 33.6% 11.6%, 31.6% 5.5%, 30.0% 0.0%); transform-origin: 75% 80%; }
+  .scene.cracked .l { transform: translate(-12%, 3%) rotate(-13deg); }
+  .scene.cracked .r { transform: translate(13%, 2%) rotate(12deg); }
 
   .crumb {
-    position: absolute; left: 50%; top: 63%;
+    position: absolute; left: 47%; top: 58%;
     width: 1.6cqw; height: 1.3cqw;
     background: #d9a055;
     border-radius: 45% 60% 40% 55%;
@@ -119,7 +121,7 @@
   .slip {
     position: absolute;
     left: 6%; width: 88%;
-    top: 35.25%;
+    top: 33.5%;
     padding: 4.6cqw 5cqw 3.6cqw 8cqw;
     background: #fbfaf5 var(--foxing);
     color: var(--ink-blue);
@@ -180,13 +182,13 @@
   .hit { position: absolute; border: 0; padding: 0; background: none; cursor: pointer; z-index: 4; }
   .hit[hidden] { display: none; }
   .hit-bag    { left: 17.5%; width: 65%; top: 17%; height: 77%; }
-  .hit-cookie { left: 14%; width: 72%; top: 17%; height: 33%; }
+  .hit-cookie { left: 18%; width: 64%; top: 13.5%; height: 37%; }
 
   .hint { position: absolute; left: 0; right: 0; top: 95.2%; margin: 0; text-align: center; font-size: max(11px, 3cqw); letter-spacing: .06em; opacity: .55; transition: opacity .4s; }
   .hint.gone { opacity: 0; }
 
   .scene.instant .cookie, .scene.instant .half, .scene.instant .slip, .scene.instant .msg,
-  .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb, .scene.instant .tab {
+  .scene.instant .keep, .scene.instant .actions, .scene.instant .crumb {
     transition: none !important; animation: none !important;
   }
 
@@ -196,40 +198,6 @@
 </style>
 </head>
 <body>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <!-- baked surface: bumpy light + little pores -->
-    <filter id="bake" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="2" result="n"/>
-      <feDiffuseLighting in="n" surfaceScale=".7" lighting-color="#fff" result="l">
-        <feDistantLight azimuth="235" elevation="62"/>
-      </feDiffuseLighting>
-      <feComposite in="SourceGraphic" in2="l" operator="arithmetic" k1="1.09" result="t"/>
-      <feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="2" seed="9" result="p"/>
-      <feColorMatrix in="p" values="0 0 0 0 .66  0 0 0 0 .4  0 0 0 0 .18  -22 0 0 0 6.4"/>
-      <feComponentTransfer><feFuncA type="linear" slope=".4"/></feComponentTransfer>
-      <feComposite in2="SourceAlpha" operator="in" result="pc"/>
-      <feMerge><feMergeNode in="t"/><feMergeNode in="pc"/></feMerge>
-    </filter>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
-    <filter id="soft2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
-    <linearGradient id="cookieBase" x1="0" y1="0" x2=".3" y2="1">
-      <stop offset="0" stop-color="#f0c98e"/>
-      <stop offset=".5" stop-color="#e5b06d"/>
-      <stop offset="1" stop-color="#cf914c"/>
-    </linearGradient>
-    <radialGradient id="cookieGlow">
-      <stop offset="0" stop-color="#fff0cc" stop-opacity=".75"/>
-      <stop offset="1" stop-color="#fff0cc" stop-opacity="0"/>
-    </radialGradient>
-    <!-- cookie halves, in cookie space (viewBox -130 -100 260 200) -->
-    <path id="shapeL" d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60 C2 -30 2 0 8 26 C-20 40 -70 56 -108 72 Z"/>
-    <path id="shapeR" d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68 C80 52 36 38 8 26 C2 0 2 -30 6 -60 Z"/>
-    <clipPath id="clipL"><use href="#shapeL"/></clipPath>
-    <clipPath id="clipR"><use href="#shapeR"/></clipPath>
-  </defs>
-</svg>
 
 <main class="scene" id="scene">
   <button class="hit hit-bag" id="hitBag" type="button" aria-label="Take a fortune cookie from the bag"></button>
@@ -245,46 +213,8 @@
   <div class="mouth">
     <div class="cookie" id="cookie">
       <div class="body">
-        <div class="half r">
-          <svg viewBox="-130 -100 260 200" aria-hidden="true">
-            <g class="tab">
-            <path d="M-102 74 C-50 48 -14 32 8 26 C40 38 80 54 112 69 C60 80 -40 82 -102 74 Z" fill="#b97c3e" filter="url(#bake)"/>
-            <path d="M-50 58 C-20 42 0 34 8 30 C30 40 60 52 80 62" fill="none" stroke="#7d4a20" stroke-width="12" opacity=".45" filter="url(#soft)"/>
-            </g>
-            <g filter="url(#bake)">
-              <use href="#shapeR" fill="url(#cookieBase)"/>
-              <g clip-path="url(#clipR)">
-                <ellipse cx="60" cy="-18" rx="44" ry="36" fill="url(#cookieGlow)"/>
-                <use href="#shapeR" fill="none" stroke="#a8692f" stroke-width="18" opacity=".3" filter="url(#soft)"/>
-                <path d="M6 -60 C2 -30 2 0 8 26" fill="none" stroke="#97582a" stroke-width="40" opacity=".42" filter="url(#soft)"/>
-                <path d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68" fill="none" stroke="#f4d6a4" stroke-width="10" opacity=".6" filter="url(#soft2)"/>
-                <path d="M6 -60 C24 -76 70 -70 98 -30 C116 -2 120 40 114 68" transform="translate(-10 4)" fill="none" stroke="#b0703a" stroke-width="2.2" opacity=".45" filter="url(#soft2)"/>
-                <path d="M114 68 C80 52 36 38 8 26" fill="none" stroke="#a96a33" stroke-width="10" opacity=".5" filter="url(#soft2)"/>
-              </g>
-            </g>
-            <use href="#shapeR" fill="none" stroke="#bf8446" stroke-width="1" opacity=".5"/>
-          </svg>
-        </div>
-        <div class="half l">
-          <svg viewBox="-130 -100 260 200" aria-hidden="true">
-            <g class="tab">
-              <path d="M-86 52 L-122 92 L-104 104 L-70 62 Z" fill="#fbfaf5" stroke="#d9d3c6" stroke-width="1"/>
-              <path d="M-114 90 L-105 97" stroke="#2f55c2" stroke-width="5" opacity=".7"/>
-            </g>
-            <g filter="url(#bake)">
-              <use href="#shapeL" fill="url(#cookieBase)"/>
-              <g clip-path="url(#clipL)">
-                <ellipse cx="-44" cy="-16" rx="46" ry="40" fill="url(#cookieGlow)"/>
-                <use href="#shapeL" fill="none" stroke="#a8692f" stroke-width="18" opacity=".26" filter="url(#soft)"/>
-                <path d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60" fill="none" stroke="#f4d6a4" stroke-width="12" opacity=".65" filter="url(#soft2)"/>
-                <path d="M-108 72 C-120 30 -94 -40 -42 -66 C-22 -74 -4 -70 6 -60" transform="translate(11 5)" fill="none" stroke="#b0703a" stroke-width="2.2" opacity=".45" filter="url(#soft2)"/>
-                <path d="M6 -60 C2 -30 2 0 8 26" fill="none" stroke="#f7ddb0" stroke-width="4" opacity=".55" filter="url(#soft2)"/>
-                <path d="M-108 72 C-70 56 -20 40 8 26" fill="none" stroke="#a96a33" stroke-width="10" opacity=".45" filter="url(#soft2)"/>
-              </g>
-            </g>
-            <use href="#shapeL" fill="none" stroke="#bf8446" stroke-width="1" opacity=".5"/>
-          </svg>
-        </div>
+        <div class="half l"><img src="img/cookie.png" alt="" width="301" height="293"></div>
+        <div class="half r"><img src="img/cookie.png" alt="" width="301" height="293"></div>
         <span class="crumb" style="--x:-7cqw"></span>
         <span class="crumb" style="--x:5cqw; --d:.05s; --z:.7"></span>
         <span class="crumb" style="--x:-2cqw; --d:.12s; --z:.5"></span>
